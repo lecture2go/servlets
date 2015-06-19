@@ -76,7 +76,6 @@ public class MultipartRequestHandler {
 
 			// 2.2 Parse the request
 			try {
-				
 				// 2.3 Get all uploaded FileItem
 				List<FileItem> items = upload.parseRequest(request);
 				String repository = "";
@@ -96,15 +95,15 @@ public class MultipartRequestHandler {
 				        if(item.getFieldName().equals("l2gDateTime"))l2gDateTime = item.getString();
 				        if(item.getFieldName().equals("openaccess"))openaccess = item.getString();
 				        if(item.getFieldName().equals("lectureseriesNumber") && item.getString().trim().length()>0)lectureseriesNumber = item.getString();
-				        if(item.getFieldName().equals("fileName") && item.getString().trim().length()>0)fileName = item.getString();
-				        if(item.getFieldName().equals("secureFileName") && item.getString().trim().length()>0)secureFileName = item.getString();
+				        if(item.getFieldName().equals("fileName") && item.getString().trim().length()>0)fileName = item.getString().toLowerCase();
+				        if(item.getFieldName().equals("secureFileName") && item.getString().trim().length()>0)secureFileName = item.getString().toLowerCase();
 				    } else {
-				        String itemName=item.getName();
+				        String itemName=item.getName().toLowerCase();
 				        String container = itemName.split("\\.")[itemName.split("\\.").length-1];
 				        // 2.7 Create FileMeta object
 				    	temp = new FileMeta();
 				    	temp.setOpenAccess(openaccess);
-						temp.setFileName(itemName.toLowerCase());
+						temp.setFileName(itemName);
 						temp.setContent(item.getInputStream());
 						temp.setFileType(item.getContentType());
 						temp.setFileSize(item.getSize()/1024 + "Kb");
@@ -136,8 +135,8 @@ public class MultipartRequestHandler {
 							//////////// ---- //////////// ---- ////////////
 							//new file -> item is lecture2go named file?
 							if(!SyntaxManager.isL2gFileName(itemName)){
-								itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime);
-								temp.setFileName(itemName.toLowerCase());
+								itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime).toLowerCase();
+								temp.setFileName(itemName);
 							}
 							//video isn't open access
 							if(openaccess.equals("0")){
@@ -176,14 +175,16 @@ public class MultipartRequestHandler {
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd_HH-mm");
 		String newDate = format.format(new Date()).toString();
 		if(l2gDateTime.length()>0)newDate=l2gDateTime;
-		return lectureseriesNumber+"_video_"+newDate+"."+container;
+		String ret = lectureseriesNumber+"_video_"+newDate+"."+container;
+		ret = ret.toLowerCase();
+		return ret;
 	}
 	// this method is used to get file name out of request headers
 	// 
 	private static String getFilename(Part part) {	
 	    for (String cd : part.getHeader("content-disposition").split(";")) {
 	        if (cd.trim().startsWith("filename")) {
-	            String filename = cd.substring(cd.indexOf('=') + 1).trim().replace("\"", "");
+	            String filename = cd.substring(cd.indexOf('=') + 1).trim().replace("\"", "").toLowerCase();
 	            return filename.substring(filename.lastIndexOf('/') + 1).substring(filename.lastIndexOf('\\') + 1); // MSIE fix.
 	        }
 	    }
