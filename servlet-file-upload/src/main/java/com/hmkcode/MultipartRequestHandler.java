@@ -84,6 +84,7 @@ public class MultipartRequestHandler {
 				String fileName = "";
 				String secureFileName = "";
 				String l2gDateTime = "";
+				String videoId = "";
 				
 				// 2.4 Go over each FileItem
 				for(FileItem item:items){
@@ -97,6 +98,7 @@ public class MultipartRequestHandler {
 				        if(item.getFieldName().equals("lectureseriesNumber") && item.getString().trim().length()>0)lectureseriesNumber = item.getString();
 				        if(item.getFieldName().equals("fileName") && item.getString().trim().length()>0)fileName = item.getString();
 				        if(item.getFieldName().equals("secureFileName") && item.getString().trim().length()>0)secureFileName = item.getString();
+				        if(item.getFieldName().equals("videoId") && item.getString().trim().length()>0)videoId = item.getString();
 				    } else {
 				        String itemName=item.getName();
 				        String container = itemName.split("\\.")[itemName.split("\\.").length-1].toLowerCase();//only container to lower case!
@@ -127,7 +129,7 @@ public class MultipartRequestHandler {
 							}else{ 
 								//or this is the first upload
 								if(fileName.length()==0 && secureFileName.endsWith(".xx")){
-									itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime);
+									itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime, videoId);
 									temp.setSecureFileName(secureFileName.replace(".xx", "."+container));
 									temp.setFileName(itemName);
 								}
@@ -135,7 +137,7 @@ public class MultipartRequestHandler {
 							//////////// ---- //////////// ---- ////////////
 							//new file -> item is lecture2go named file?
 							if(!SyntaxManager.isL2gFileName(itemName)){
-								itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime);
+								itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime, videoId);
 								temp.setFileName(itemName);
 							}
 							//video isn't open access
@@ -166,17 +168,16 @@ public class MultipartRequestHandler {
 		return files;
 	}
 
-	private static String generateL2gFileName(String lectureseriesNumber, String container){
-		return generateL2gFileName(lectureseriesNumber, container,"");
+	private static String generateL2gFileName(String lectureseriesNumber, String container, String videoId){
+		return generateL2gFileName(lectureseriesNumber, container,"", videoId);
 	}
 
 		
-	private static String generateL2gFileName(String lectureseriesNumber, String container, String l2gDateTime){
+	private static String generateL2gFileName(String lectureseriesNumber, String container, String l2gDateTime, String videoId){
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd_HH-mm");
 		String newDate = format.format(new Date()).toString();
 		if(l2gDateTime.length()>0)newDate=l2gDateTime;
-		String ret = lectureseriesNumber+"_video_"+newDate+"."+container;
-		ret = ret;
+		String ret = lectureseriesNumber+"_video-"+videoId+"_"+newDate+"."+container;
 		return ret;
 	}
 	// this method is used to get file name out of request headers
