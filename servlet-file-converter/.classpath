@@ -8,5 +8,6 @@
 			<attribute name="owner.project.facets" value="java"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry combineaccessrules="false" kind="src" path="/liferay-portal-6.2-ce-ga6"/>
 	<classpathentry kind="output" path="WebContent/WEB-INF/classes"/>
 </classpath>

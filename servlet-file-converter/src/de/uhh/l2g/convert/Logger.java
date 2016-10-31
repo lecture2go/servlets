@@ -9,26 +9,19 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import de.uhh.l2g.beans.Video;
-import de.uhh.l2g.dao.VideoDao;
-
 public class Logger extends Thread {
 	protected Process process;
 	protected String path;
-	protected Video video;
 	protected String converterLog;
-	protected VideoDao videoDao;
 	protected String videoDuration="";
 	protected String currentTime="";
 	protected float percentDone=0;	
 
     public Logger() {}
     
-    public Logger(Process process, String path, Video video, VideoDao videoDao) {
+    public Logger(Process process, String path) {
         this.process = process;
         this.path = path;
-        this.video = video;
-        this.videoDao = videoDao;
     }
     
 	protected static boolean processIsRunning(Process process) {
@@ -93,11 +86,11 @@ public class Logger extends Thread {
 		//update queue after process is done
 		if(outputFile.getPath().contains(".mp3.log")){
 			QueueManager.audioQueue.removeElement(path);
-			QueueManager.videoListForExtracting.remove(video);				
+			QueueManager.videoListForExtracting.remove(path);				
 		}
 		if(outputFile.getPath().contains(".mp4.log")){
 			QueueManager.videoQueue.removeElement(path);
-			QueueManager.videoListForConverting.remove(video);			
+			QueueManager.videoListForConverting.remove(path);			
 		}
 
 		//interrupt this process and destroy

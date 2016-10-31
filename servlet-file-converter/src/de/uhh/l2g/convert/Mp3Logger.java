@@ -2,10 +2,6 @@ package de.uhh.l2g.convert;
 
 import java.io.File;
 
-import de.uhh.l2g.beans.Video;
-import de.uhh.l2g.dao.VideoDao;
-import de.uhh.l2g.util.ProzessManager;
-
 public class Mp3Logger extends Logger {
 
 	//log ffmpeg output
@@ -13,12 +9,9 @@ public class Mp3Logger extends Logger {
 	//log converter status
 	protected File extractorOutputFile;
 	
-    public Mp3Logger(Process process, String path, Video video, VideoDao videoDao) {
+    public Mp3Logger(Process process, String path) {
         super.process = process;
         super.path = path;
-        super.video = video;
-        super.videoDao = videoDao;
-        
         ffmpegOutputFile = new File(path+".ffmpeg.mp3.log");
         extractorOutputFile = new File(path+".extractor.mp3.log");
     }
@@ -32,9 +25,6 @@ public class Mp3Logger extends Logger {
 			//delete the log files
 			ffmpegOutputFile.delete();
 			extractorOutputFile.delete();
-			//update RSS for video
-			ProzessManager pm = new ProzessManager();
-			pm.updateMp3RSS(video, videoDao);
 		}else{
 			//TODO notify that something goes wrong
 		}
