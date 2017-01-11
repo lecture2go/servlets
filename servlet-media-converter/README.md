@@ -6,7 +6,7 @@ You can use this simple servlet for the following:
 
 ## How to install
 
-Copy this servlet to your servlet container root directory
+Copy this servlet to your servlet container root directory and start your server.
 
 ## Run
 - For MP4
