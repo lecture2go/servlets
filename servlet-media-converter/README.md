@@ -8,7 +8,7 @@ Copy this servlet to your servlet container root directory
 
 ## Run
 - For MP4
-localhost:8080/convertFile?action=convertFileToMp4&id=/path/to/your/video.extention
+- - localhost:8080/convertFile?action=convertFileToMp4&id=/path/to/your/video.extention
 
 - For MP3 extraction 
-localhost:8080/convertFile?action=extractMp3FromMp4&id=/path/to/your/video.mp4
+- - localhost:8080/convertFile?action=extractMp3FromMp4&id=/path/to/your/video.mp4
