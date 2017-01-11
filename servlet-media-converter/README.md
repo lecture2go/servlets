@@ -9,7 +9,7 @@ You can use this simple servlet for the following:
 - Webcontainer (e.g. Apache Tomcate)
 
 ## Configuration
-/servlet-media-converter/src/main/webapp/WEB-INF/web.xml
+Open the web.xml configuration placed on this location /servlet-media-converter/src/main/webapp/WEB-INF/web.xml
 
 ```
 		<init-param>
@@ -34,7 +34,6 @@ You can use this simple servlet for the following:
 	    </init-param>
       
 ```
-/servlet-media-converter/src/main/webapp/WEB-INF/web.xml
 
 ## How to install
 Copy this servlet to your servlet container root directory.
