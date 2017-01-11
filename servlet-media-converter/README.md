@@ -8,6 +8,34 @@ You can use this simple servlet for the following:
 - FFMPEG
 - Webcontainer (e.g. Apache Tomcate)
 
+## Configuration
+/servlet-media-converter/src/main/webapp/WEB-INF/web.xml
+
+```
+		<init-param>
+			<param-name>converterServerName</param-name>
+			<param-value>localhost</param-value>
+		</init-param>
+		<init-param>
+			<param-name>maxQueue</param-name>
+			<param-value>3</param-value>
+		</init-param>
+		<init-param>
+			<param-name>ffmpegBin</param-name>
+			<param-value>/usr/local/bin/ffmpeg</param-value>
+		</init-param>
+	    <init-param>
+	      	<param-name>ffmpegConvertFileToMp4CommandParameter</param-name>
+	      	<param-value>-f mp4 -c:v libx264 -preset slow -b:v 650k -r 25 -bufsize 175k -strict -2 -c:a aac -ar 44100 -b:a 64k -ac 1</param-value>
+	    </init-param>
+	    <init-param>
+	      	<param-name>ffmpegExtractMp3FileFromMp4</param-name>
+	      	<param-value>-f mp3 -vn</param-value>
+	    </init-param>
+      
+```
+/servlet-media-converter/src/main/webapp/WEB-INF/web.xml
+
 ## How to install
 Copy this servlet to your servlet container root directory.
 
