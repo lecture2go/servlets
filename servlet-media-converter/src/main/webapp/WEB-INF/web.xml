@@ -18,10 +18,6 @@
 		<servlet-name>Lecture2GoConverter</servlet-name>
 		<servlet-class>ConverterManager</servlet-class>
 		<init-param>
-			<param-name>repositoryRoot</param-name>
-			<param-value>/Users/isturm/Desktop/l2gomedia</param-value>
-		</init-param>
-		<init-param>
 			<param-name>converterServerName</param-name>
 			<param-value>localhost</param-value>
 		</init-param>
