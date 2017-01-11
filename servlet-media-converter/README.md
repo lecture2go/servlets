@@ -1,7 +1,7 @@
 # Video Converter
 
 You can use this simple servlet for the following:
-- converting of different vide file formats to h.264/AAC encodet video (MPEG-4)
+- converting of different video formats to h.264/AAC encodet video (MPEG-4)
 - extracting mp3 audio/AAC from MPEG 4-Video
 
 ## How to install
