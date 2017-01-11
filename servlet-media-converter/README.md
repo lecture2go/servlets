@@ -11,10 +11,10 @@ You can use this simple servlet for the following:
 ## Configuration
 Open the web.xml configuration file. Here you can set the following parameters:
 - converterServerName
-- maxQueue
-- ffmpegBin
-- ffmpegConvertFileToMp4CommandParameter
-- ffmpegExtractMp3FileFromMp4
+- maxQueue (Number of videos converted at the same time)
+- ffmpegBin (run "which ffmpeg" on your shell for this parameter)
+- ffmpegConvertFileToMp4CommandParameter (Specifies the command to convert)
+- ffmpegExtractMp3FileFromMp4 (Specifies the command to extract)
 
 ```
 		<init-param>
