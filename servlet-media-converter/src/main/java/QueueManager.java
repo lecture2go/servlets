@@ -57,7 +57,11 @@ public abstract class QueueManager extends Queue {
 
 	private boolean contanisMp4videosForMp3Extraction(String v) {
 		boolean bool = false;
-		File vF = new File(v);
+		//mp4 exists
+		String pathFileToConvert = v;
+		String containerFormat = pathFileToConvert.split("\\.")[pathFileToConvert.split("\\.").length-1];	
+		String aPath = pathFileToConvert.split(containerFormat)[0] + "mp3"; 
+		File vF = new File(aPath);
 		if (vF.isFile())
 			bool = true;// audio is being extracted from video or has been
 						// extracted

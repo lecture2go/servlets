@@ -47,4 +47,13 @@ public class QueueManagerForExtracting extends QueueManager {
 			sleep(15000);
 			updateQueue();
 	    } 	
+	    
+		public static boolean removeFileFromVideoListForExtracting(File fileToExtract){
+			for(int a=0;a<videoListForExtracting.size();a++){
+				if(videoListForExtracting.get(a).equals(fileToExtract.toString())){
+					videoListForExtracting.remove(a);
+				}
+			}
+			return true;
+		}	    
 }
