@@ -1,9 +1,11 @@
 # Video Converter
-This is a simple video converter with functionality for
+
+You can use this simple servlet for the following:
 - converting of any media to h.264/AAC video
 - extracting mp3 audio/AAC from MPEG 4-Video
 
 ## How to install
+
 Copy this servlet to your servlet container root directory
 
 ## Run
