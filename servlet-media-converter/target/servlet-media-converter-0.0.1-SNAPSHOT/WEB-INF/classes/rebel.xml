@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<application generated-by="eclipse" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.zeroturnaround.com" xsi:schemaLocation="http://www.zeroturnaround.com http://update.zeroturnaround.com/jrebel/rebel-2_1.xsd">
+<application generated-by="maven" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.zeroturnaround.com" xsi:schemaLocation="http://www.zeroturnaround.com http://update.zeroturnaround.com/jrebel/rebel-2_1.xsd">
 
 	<classpath>
 		<dir name="/Users/isturm/Documents/workspace-for-liferay-6.2.0/servlets/servlet-media-converter/target/classes">
@@ -7,11 +7,6 @@
 	</classpath>
 
 	<web>
-		<link target="/">
-			<dir name="/Users/isturm/Documents/workspace-for-liferay-6.2.0/servlets/servlet-media-converter/target/m2e-wtp/web-resources">
-				<exclude name="/"/>
-			</dir>
-		</link>
 		<link target="/">
 			<dir name="/Users/isturm/Documents/workspace-for-liferay-6.2.0/servlets/servlet-media-converter/src/main/webapp">
 			</dir>
