@@ -36,12 +36,8 @@ public class QueueManagerForConverting extends QueueManager {
 					try {
 						new Converter().convertFileToMp4(fileToConvert); 
 					} catch (IOException e) { e.printStackTrace(); }
-				}else{//remove from Queue
-					for(int a=0;a<videoListForConverting.size();a++){
-						if(videoListForConverting.get(a).equals(fileToConvert.toString())){
-							videoListForConverting.remove(a);
-						}
-					}
+				}else{//update Queue if file not found
+					removeFileFromVideoListForConverting(fileToConvert);
 				}
 				//wait, if queue is full
 				while(videoQueue.size()==MAXQUEUE){
@@ -52,4 +48,14 @@ public class QueueManagerForConverting extends QueueManager {
 			sleep(15000);
 		updateQueue();
 	    } 	
+		
+		public static boolean removeFileFromVideoListForConverting(File fileToConvert){
+			for(int a=0;a<videoListForConverting.size();a++){
+				if(videoListForConverting.get(a).equals(fileToConvert.toString())){
+					videoListForConverting.remove(a);
+				}
+			}
+			return true;
+		}
+		
 }

@@ -22,6 +22,10 @@ public class Converter extends ConverterManager{
 
 		Queue.videoQueue.addElement(pathFileToConvert);
 		final Process process = pb.start();
+		//remove from que for converting, 
+		//because the process has started
+		QueueManagerForConverting.removeFileFromVideoListForConverting(fileToConvert);
+		
 		//any output?
 		Mp4Logger outputLogger = new Mp4Logger(process, pathFileToConvert);
 		//start gobblers

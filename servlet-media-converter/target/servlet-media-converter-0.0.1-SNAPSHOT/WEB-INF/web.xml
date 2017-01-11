@@ -27,7 +27,7 @@
 		</init-param>
 		<init-param>
 			<param-name>maxQueue</param-name>
-			<param-value>10</param-value>
+			<param-value>3</param-value>
 		</init-param>
 		<init-param>
 			<param-name>ffmpegBin</param-name>
