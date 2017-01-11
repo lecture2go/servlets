@@ -28,4 +28,4 @@ Copy this servlet to your servlet container root directory.
 ## Run
 ```
 localhost:8080/servlet-file-download/getFile?downloadAllowed=1&downloadPath=/path/to/your/file.extentionn
-`
+```
