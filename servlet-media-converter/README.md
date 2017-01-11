@@ -9,8 +9,12 @@ You can use this simple servlet for the following:
 - Webcontainer (e.g. Apache Tomcate)
 
 ## Configuration
-Open the web.xml configuration placed on this location 
-/servlet-media-converter/src/main/webapp/WEB-INF/web.xml
+Open the web.xml configuration file. Here you can set the following parameters:
+### converterServerName
+### maxQueue
+### ffmpegBin
+### ffmpegConvertFileToMp4CommandParameter
+### ffmpegExtractMp3FileFromMp4
 
 ```
 		<init-param>
