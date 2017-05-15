@@ -2,7 +2,6 @@ package de.uhh.l2g.webservices.videoprocessor.util;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.apache.commons.io.FileUtils;
