@@ -8,27 +8,14 @@ import java.net.URL;
 import org.apache.commons.io.FileUtils;
 
 public class FileHandler {
-	public static void download(String sourceUrlString, String targetPath) {
+	public static void download(String sourceUrlString, String targetPath) throws IOException {
 		File target = new File(targetPath);
-		try {
-			URL sourceUrl = new URL(sourceUrlString);
-			FileUtils.copyURLToFile(sourceUrl, target);
-		} catch (MalformedURLException e){
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		URL sourceUrl = new URL(sourceUrlString);
+		FileUtils.copyURLToFile(sourceUrl, target);
 	}
 	
-	public static void rename(String sourcePath, String targetPath) {
-		try {
-			FileUtils.moveFile(FileUtils.getFile(sourcePath), FileUtils.getFile(targetPath));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public static void rename(String sourcePath, String targetPath) throws IOException {
+		FileUtils.moveFile(FileUtils.getFile(sourcePath), FileUtils.getFile(targetPath));
 	}
 	
 	public static void delete(String filePath) {
