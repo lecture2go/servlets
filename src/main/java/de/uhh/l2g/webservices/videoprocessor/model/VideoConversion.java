@@ -25,6 +25,7 @@ public class VideoConversion {
 	//private Long id;
 	
 	@Id
+	@Column(updatable = false)
 	private Long sourceId;
 
 	private String opencastId;
@@ -36,6 +37,7 @@ public class VideoConversion {
 	@Enumerated(EnumType.STRING)
 	private VideoConversionStatus status;
 	
+	@Column(updatable = false)
 	private Date startTime;
 
 	private String elapsedTime;
