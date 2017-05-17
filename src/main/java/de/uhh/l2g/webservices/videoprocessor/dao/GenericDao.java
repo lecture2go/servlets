@@ -74,7 +74,20 @@ public class GenericDao {
 	}
 		
 	public void delete(Object o) {
-		getEntityManager().remove(o);
+		EntityManager em = getEntityManager();
+		em.getTransaction().begin();
+		em.remove(o);
+		em.getTransaction().commit();
+		em.close();
+	}
+	
+	public <T> void deleteById(Class<T> type, Long id) {
+		EntityManager em = getEntityManager();
+		em.getTransaction().begin();
+        T result = em.find(type, id);
+		em.remove(result);
+		em.getTransaction().commit();
+		em.close();
 	}
 	
 }
