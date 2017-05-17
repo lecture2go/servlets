@@ -63,10 +63,10 @@ public class OpencastApiCall {
 	 * This creates a new event on the opencast system with the given video file
 	 * @param filepath the path of the file which will be converted
 	 * @param title the title which will be used in the opencast system
-	 * @param id the id which will make it easier to find the video in opencast
+	 * @param sourceid the source id
 	 * @return the response from the opencast API
 	 */
-	static String postNewEventRequest(String filepath, String title, Long id) {
+	static String postNewEventRequest(String filepath, String title, Long sourceId) {
 		// TODO: change hardcoded to properties
 		//String eventEndpoint = "events";
 		
@@ -78,8 +78,8 @@ public class OpencastApiCall {
 				
 		// create the parts necessary for the the request
 		String acl = createAclJson();
-		String metadata = createMetadataJson(title, id);
-		String processing = createProcessingJson();
+		String metadata = createMetadataJson(title, sourceId);
+		String processing = createProcessingJson(sourceId);
 
 		// create the multipart form data
 		FormDataMultiPart multiPart = new FormDataMultiPart();
@@ -91,7 +91,7 @@ public class OpencastApiCall {
 		FileInputStream fileInputStream = null;
 		try {
 			fileInputStream = new FileInputStream(filepath);
-			multiPart.bodyPart(new StreamDataBodyPart("presenter",fileInputStream));
+			multiPart.bodyPart(new StreamDataBodyPart("presenter",fileInputStream,FilenameUtils.getName(filepath)));
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -221,12 +221,12 @@ public class OpencastApiCall {
 	 * Creates an opencast-compatible processing json string
 	 * @return the processing info as as json string
 	 */
-	private static String createProcessingJson() {
+	private static String createProcessingJson(Long id) {
 		// TODO: do not use hardcoded values (properties?)
 		Map<String, Object> processing = new HashMap<String,Object>();
 		processing.put("workflow","l2go-adaptive-publish");
 		Map<String, String> configuration = new HashMap<String,String>();
-		configuration.put("test","true");
+		configuration.put("sourceId",id.toString());
 		processing.put("configuration",configuration);
 		
 		String processingAsJson = null;
@@ -236,7 +236,7 @@ public class OpencastApiCall {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+				
 		return processingAsJson;
 	}
 	
