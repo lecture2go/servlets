@@ -8,6 +8,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import de.uhh.l2g.webservices.videoprocessor.dao.GenericDao;
 import de.uhh.l2g.webservices.videoprocessor.model.VideoConversion;
 
 public class VideoConversionResource {
@@ -20,7 +21,7 @@ public class VideoConversionResource {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public VideoConversion getVideoConversion() {
-		return null;
+		return GenericDao.getInstance().get(VideoConversion.class, id);
 	}
 	
 	@PUT
