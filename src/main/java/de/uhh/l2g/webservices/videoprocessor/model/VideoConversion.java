@@ -19,11 +19,12 @@ import javax.persistence.EnumType;
 @Table(name = "videoconversion")
 public class VideoConversion {
 
+	//@Id
+	//@GeneratedValue(strategy = GenerationType.IDENTITY)
+	//@Column(name = "id", updatable = false, nullable = false)
+	//private Long id;
+	
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id", updatable = false, nullable = false)
-	private Long id;
-
 	private Long sourceId;
 
 	private String opencastId;
@@ -70,16 +71,16 @@ public class VideoConversion {
 	/**
 	 * @return the id
 	 */
-	public Long getId() {
+	/*public Long getId() {
 		return id;
-	}
+	}*/
 
 	/**
 	 * @param id the id to set
 	 */
-	public void setId(Long id) {
+	/*public void setId(Long id) {
 		this.id = id;
-	}
+	}*/
 	
 	/**
 	 * @return the sourceId
