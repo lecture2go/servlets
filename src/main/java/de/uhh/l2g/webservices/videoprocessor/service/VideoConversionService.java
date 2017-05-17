@@ -71,4 +71,31 @@ public class VideoConversionService {
 	private void cleanup() {
 		// deletes old files
 	}
+
+	public void handleOpencastResponse(Long id, Boolean success) {
+		// get the corresponding videoconversion object
+		GenericDao genericDao = GenericDao.getInstance();
+		VideoConversion videoConversion = genericDao.get(VideoConversion.class, id);
+		
+		if (success) {
+			// the opencast workflow was successful
+			
+			// update the status of the video conversion
+			videoConversion.setStatus(VideoConversionStatus.OC_SUCCEEDED);
+			//TODO: this should not be necessary if entity is managed by JPA/Hibernate
+			genericDao.update(videoConversion);
+			
+			// get the event details
+			OpencastApiCall.getPublications(videoConversion.getOpencastId());
+			
+		} else {
+			// the opencast workflow failed
+			
+			// update the status of the video conversion
+			videoConversion.setStatus(VideoConversionStatus.ERROR_OC_FAILED);
+			//TODO: this should not be necessary if entity is managed by JPA/Hibernate
+			genericDao.update(videoConversion);
+		}
+		
+	}
 }

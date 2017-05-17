@@ -14,6 +14,7 @@ import javax.ws.rs.core.Response;
 
 import de.uhh.l2g.webservices.videoprocessor.dao.GenericDao;
 import de.uhh.l2g.webservices.videoprocessor.model.VideoConversion;
+import de.uhh.l2g.webservices.videoprocessor.service.VideoConversionService;
 
 public class VideoConversionResource {
 	private Long id;
@@ -39,10 +40,9 @@ public class VideoConversionResource {
 	
 	@PUT
 	@Consumes({MediaType.APPLICATION_FORM_URLENCODED})
-	public Response putVideoConversionFormData(@FormParam("message") String vc) {
-		System.out.println("it is a form data");
-
-		return null;
+	public void putVideoConversionFormData(@FormParam("message") Boolean success) {
+		VideoConversionService vc = new VideoConversionService();
+		vc.handleOpencastResponse(id, success);
 	}
 	
 	

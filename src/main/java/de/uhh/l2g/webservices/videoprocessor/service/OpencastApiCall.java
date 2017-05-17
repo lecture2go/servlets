@@ -118,6 +118,14 @@ public class OpencastApiCall {
 		}
 	}
 	
+	public static void getPublications(String opencastId) {
+		String publicationsEndpoint = eventEndpoint + "/" + opencastId + "/publications";
+		WebTarget target = prepareApiCall(publicationsEndpoint);
+		
+		target.request(MediaType.APPLICATION_JSON_TYPE).get();
+
+	}
+	
 	
 	/**
 	 * @param filepath the filepath of a file which will be send to opencast
