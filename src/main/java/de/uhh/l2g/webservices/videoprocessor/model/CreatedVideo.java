@@ -1,10 +1,23 @@
 package de.uhh.l2g.webservices.videoprocessor.model;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
+import org.apache.commons.io.FilenameUtils;
+
+@Entity
+@Table(name = "createdvideo")
 public class CreatedVideo extends CreatedFile {
 
+	@Id
+	private Long id;
+	
 	private String filePath;
 
-	private int bitrate;
+	@Transient
+	private String filename;
 
 	private int bitrateVideo;
 
@@ -13,6 +26,22 @@ public class CreatedVideo extends CreatedFile {
 	private int width;
 
 	private int height;
+
+	private int bitrate;
+
+	/**
+	 * @return the id
+	 */
+	public Long getId() {
+		return id;
+	}
+
+	/**
+	 * @param id the id to set
+	 */
+	public void setId(Long id) {
+		this.id = id;
+	}
 
 	/**
 	 * @return the filePath
@@ -26,6 +55,22 @@ public class CreatedVideo extends CreatedFile {
 	 */
 	public void setFilePath(String filePath) {
 		this.filePath = filePath;
+	}
+	
+
+	/**
+	 * @return the filename
+	 */
+	public String getFilename() {
+		return FilenameUtils.getName(filePath);
+	}
+
+	/**
+	 * @param filename the sourceFileName to set
+	 */
+	public void setFilename(String filename) {
+		String fullPath = FilenameUtils.getFullPath(filePath);
+		this.filePath = FilenameUtils.concat(fullPath, filename);
 	}
 
 	/**
