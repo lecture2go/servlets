@@ -29,6 +29,8 @@ import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.uhh.l2g.webservices.videoprocessor.model.opencast.Publication;
+
 public class OpencastApiCall {
 	
 	public static String eventEndpoint = "events";
@@ -118,12 +120,12 @@ public class OpencastApiCall {
 		}
 	}
 	
-	public static void getPublications(String opencastId) {
+	public static Publication getPublications(String opencastId) {
 		String publicationsEndpoint = eventEndpoint + "/" + opencastId + "/publications";
 		WebTarget target = prepareApiCall(publicationsEndpoint);
 		
-		target.request(MediaType.APPLICATION_JSON_TYPE).get();
-
+		Publication publication = target.request(MediaType.APPLICATION_JSON_TYPE).get(Publication.class);
+		return publication;
 	}
 	
 	
