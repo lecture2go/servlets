@@ -13,6 +13,9 @@ import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.EnumType;
+import javax.persistence.Transient;
+
+import org.apache.commons.io.FilenameUtils;
 
 
 @Entity
@@ -32,7 +35,8 @@ public class VideoConversion {
 
 	private String sourceFilePath;
 	
-	private String sourceFileName;
+	@Transient
+	private String sourceFilenam;
 
 	@Enumerated(EnumType.STRING)
 	private VideoConversionStatus status;
@@ -129,15 +133,16 @@ public class VideoConversion {
 	/**
 	 * @return the sourceFileName
 	 */
-	public String getSourceFileName() {
-		return sourceFileName;
+	public String getSourceFilename() {
+		return FilenameUtils.getName(sourceFilePath);
 	}
 
 	/**
 	 * @param sourceFileName the sourceFileName to set
 	 */
-	public void setSourceFileName(String sourceFileName) {
-		this.sourceFileName = sourceFileName;
+	public void setSourceFilename(String sourceFilename) {
+		String fullPath = FilenameUtils.getFullPath(sourceFilePath);
+		this.sourceFilePath = FilenameUtils.concat(fullPath, sourceFilename);
 	}
 
 	/**
