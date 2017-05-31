@@ -36,7 +36,7 @@ public class VideoConversion {
 	private String sourceFilePath;
 	
 	@Transient
-	private String sourceFilenam;
+	private String sourceFilename;
 
 	@Enumerated(EnumType.STRING)
 	private VideoConversionStatus status;
