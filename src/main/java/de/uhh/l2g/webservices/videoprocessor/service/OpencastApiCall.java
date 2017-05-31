@@ -2,7 +2,6 @@ package de.uhh.l2g.webservices.videoprocessor.service;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +13,7 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -30,6 +30,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.uhh.l2g.webservices.videoprocessor.model.opencast.Publication;
+
 
 public class OpencastApiCall {
 	
@@ -120,12 +121,22 @@ public class OpencastApiCall {
 		}
 	}
 	
-	public static Publication getPublications(String opencastId) {
+	public static Publication getPublication(String opencastId, String publicationChannel) {
 		String publicationsEndpoint = eventEndpoint + "/" + opencastId + "/publications";
 		WebTarget target = prepareApiCall(publicationsEndpoint);
 		
-		Publication publication = target.request(MediaType.APPLICATION_JSON_TYPE).get(Publication.class);
-		return publication;
+		// saves a list of ob publications to a publications object
+		List<Publication>publications = target.request(MediaType.APPLICATION_JSON_TYPE).get(new GenericType<List<Publication>>() {});
+		
+		// check for correct publication
+		Publication correctPublication = null;
+		for (Publication publication: publications) {
+			if (publication.getChannel().equalsIgnoreCase(publicationChannel)) {
+				correctPublication = publication;
+			}
+		}
+		
+		return correctPublication;
 	}
 	
 	
@@ -287,4 +298,5 @@ public class OpencastApiCall {
 		
 		return metadataListAsJson;
 	}
+	
 }
