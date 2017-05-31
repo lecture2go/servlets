@@ -17,9 +17,14 @@ public class FileHandler {
 		FileUtils.moveFile(FileUtils.getFile(sourcePath), FileUtils.getFile(targetPath));
 	}
 	
-	public static void delete(String filePath) {
+	public static void deleteIfExists(String filePath) throws SecurityException {
+		FileUtils.getFile(filePath).delete();
+
+		/*
 		if (!FileUtils.deleteQuietly(FileUtils.getFile(filePath))) {
+			throw new 
 			// TODO delete gone wrong
 		}
+		*/
 	}
 }
