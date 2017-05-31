@@ -1,6 +1,9 @@
 package de.uhh.l2g.webservices.videoprocessor.model;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
@@ -12,6 +15,8 @@ import org.apache.commons.io.FilenameUtils;
 public class CreatedVideo extends CreatedFile {
 
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id", updatable = false, nullable = false)
 	private Long id;
 	
 	private String filePath;
@@ -19,9 +24,9 @@ public class CreatedVideo extends CreatedFile {
 	@Transient
 	private String filename;
 
-	private int bitrateVideo;
+	private int bitrateVideo = 0;
 
-	private int bitrateAudio;
+	private int bitrateAudio = 0;
 
 	private int width;
 
