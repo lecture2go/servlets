@@ -198,8 +198,8 @@ public class VideoConversionService {
 			// build SMIL file
 
 			// the SMIL file will be written to the same folder as the created videos
-			String smilFullPath = FilenameUtils.getFullPath(videos.get(0).getFilePath());
-			String smilFilename = FilenameUtils.getBaseName(videos.get(0).getFilename()) + ".smil";
+			String smilFullPath = FilenameUtils.getFullPath(videoConversion.getSourceFilePath());
+			String smilFilename = FilenameUtils.getBaseName(videoConversion.getSourceFilename()) + ".smil";
 			String smilFilePath = FilenameUtils.concat(smilFullPath, smilFilename);
 			// delete smil file is exists
 			try {
