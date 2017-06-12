@@ -14,12 +14,9 @@ import org.apache.commons.io.FilenameUtils;
 @Table(name = "createdvideo")
 public class CreatedVideo extends CreatedFile {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id", updatable = false, nullable = false)
-	private Long id;
+
 	
-	private String filePath;
+	//private String filePath;
 
 	@Transient
 	private String filename;
@@ -33,6 +30,7 @@ public class CreatedVideo extends CreatedFile {
 	private int height;
 
 	private int bitrate;
+	
 
 	/**
 	 * @return the id
@@ -51,16 +49,16 @@ public class CreatedVideo extends CreatedFile {
 	/**
 	 * @return the filePath
 	 */
-	public String getFilePath() {
+	/*public String getFilePath() {
 		return filePath;
-	}
+	}*/
 
 	/**
 	 * @param filePath the filePath to set
 	 */
-	public void setFilePath(String filePath) {
+	/*public void setFilePath(String filePath) {
 		this.filePath = filePath;
-	}
+	}*/
 	
 
 	/**

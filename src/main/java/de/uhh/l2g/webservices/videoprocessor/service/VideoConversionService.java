@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.uhh.l2g.webservices.videoprocessor.dao.GenericDao;
+import de.uhh.l2g.webservices.videoprocessor.model.CreatedFile;
 import de.uhh.l2g.webservices.videoprocessor.model.CreatedVideo;
 import de.uhh.l2g.webservices.videoprocessor.model.VideoConversion;
 import de.uhh.l2g.webservices.videoprocessor.model.VideoConversionStatus;
@@ -132,6 +133,9 @@ public class VideoConversionService {
 			List<CreatedVideo> videos = new ArrayList<CreatedVideo>();
 			for(Medium medium: publication.getMedia()) {
 				CreatedVideo createdVideo = new CreatedVideo();
+				// set reference to videoConversion object
+				createdVideo.setVideoConversion(videoConversion);
+			
 				String sourceFilePath = videoConversion.getSourceFilePath();
 				
 				try {
@@ -214,12 +218,25 @@ public class VideoConversionService {
 				videoConversion.setStatus(VideoConversionStatus.CREATING_SMIL);
 				GenericDao.getInstance().update(videoConversion);
 				SmilBuilder.buildSmil(smilFilePath, videos);
+				// persist smil file as a createdFile object to database
+				CreatedFile smilFile = new CreatedFile();
+				smilFile.setFilePath(smilFilePath);
+				smilFile.setVideoConversion(videoConversion);
+				GenericDao.getInstance().save(smilFile);
 			} catch (ParserConfigurationException | TransformerException e) {
 				videoConversion.setStatus(VideoConversionStatus.ERROR_CREATING_SMIL);
 				GenericDao.getInstance().update(videoConversion);
 				e.printStackTrace();
 			}
 			
+			
+			//TODO: delete files in opencast
+			
+			
+			
+			// the process is finished
+			videoConversion.setStatus(VideoConversionStatus.FINISHED);
+			GenericDao.getInstance().update(videoConversion);
 			
 		} else {
 			// the opencast workflow failed

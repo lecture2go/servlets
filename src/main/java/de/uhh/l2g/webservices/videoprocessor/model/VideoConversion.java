@@ -1,6 +1,7 @@
 package de.uhh.l2g.webservices.videoprocessor.model;
 
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.persistence.Column;
@@ -9,6 +10,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
@@ -45,6 +47,9 @@ public class VideoConversion {
 	private Date startTime;
 
 	private String elapsedTime;
+	
+	@OneToMany(mappedBy = "videoConversion")
+	private List<CreatedFile> createdFiles;
 	
 	//private CreatedFile[] createdFiles;
 
