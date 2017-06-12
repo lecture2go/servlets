@@ -101,7 +101,14 @@ public class OpencastApiCall {
 		}
 		
 		// send the post request
-		Response response = target.request().post(Entity.entity(multiPart, MediaType.MULTIPART_FORM_DATA_TYPE));
+		Response response = null;
+		try {
+			response = target.request().post(Entity.entity(multiPart, MediaType.MULTIPART_FORM_DATA_TYPE));
+		} catch (Exception e) {
+			// on failure close the inputStream
+			IOUtils.closeQuietly(fileInputStream);
+			throw new WebApplicationException();
+		}
 
 		// after sending the request, close the inputStream
 		IOUtils.closeQuietly(fileInputStream);
@@ -119,6 +126,9 @@ public class OpencastApiCall {
 				// other general error
 				throw new WebApplicationException();
 		}
+		
+		
+		
 	}
 	
 	public static Publication getPublication(String opencastId, String publicationChannel) {
