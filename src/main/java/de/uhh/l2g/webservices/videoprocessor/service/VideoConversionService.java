@@ -38,17 +38,13 @@ public class VideoConversionService {
 		// there is no autoincrement id, as the source id is used. a new videoconversion process results in the cleanup 
 		// of a current or finished videoconversion with the same id
 		VideoConversion videoConversionDb = genericDao.get(VideoConversion.class, videoConversion.getSourceId());
-		if (videoConversionDb == null) {
-			videoConversion = genericDao.save(videoConversion);
-		} else {
-			cleanup();
+		if (videoConversionDb != null) {
+			// delete old files
+			fileCleanup(videoConversion);
 			genericDao.deleteById(VideoConversion.class, videoConversionDb.getSourceId());
-			genericDao.save(videoConversion);
+			//genericDao.save(videoConversion);
 		}
-		//videoConversion = genericDao.save(videoConversion);
-
-		// delete old files
-		// cleanup();
+		videoConversion = genericDao.save(videoConversion);
 		
 		// create a new opencast event via the opencast API
 		try {
@@ -92,8 +88,24 @@ public class VideoConversionService {
 		
 	}
 	
-	private void cleanup() {
-		// deletes old files
+	/**
+	 * Deletes all files in the filesystem for an VideoConversion object
+	 * @param videoConversion the VideoConversion object whose files are deleted
+	 */
+	private void fileCleanup(VideoConversion videoConversion) {
+		List<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
+		if (createdFiles != null) {
+			for(CreatedFile createdFile: createdFiles) {
+				try {
+					FileHandler.deleteIfExists(createdFile.getFilePath());
+				} catch (Exception e) {
+					videoConversion.setStatus(VideoConversionStatus.ERROR_DELETING);
+					GenericDao.getInstance().update(videoConversion);
+					// TODO: log
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 
 	public void handleOpencastResponse(Long id, Boolean success) {
@@ -141,7 +153,7 @@ public class VideoConversionService {
 				try {
 					videoConversion.setStatus(VideoConversionStatus.COPYING_FROM_OC);
 					GenericDao.getInstance().update(videoConversion);
-					// download the file with a temporary filename to avoid simulanteous writing to the same fiile  
+					// download the file with a temporary filename to avoid simulanteous writing to the same file  
 					String suffix = "_oc_" + medium.getWidth().toString();
 					String targetFilePath = FilenameHandler.addToBasename(sourceFilePath, suffix);
 					// delete file is exists
@@ -247,5 +259,53 @@ public class VideoConversionService {
 			genericDao.update(videoConversion);
 		}
 		
+	}
+	
+	public void renameFiles(Long id, String filename) {
+		VideoConversion videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
+		
+		// this is the old filename without extension, which provides the foundation for the renaming
+		String oldBaseFilename = FilenameUtils.getBaseName(videoConversion.getSourceFilename());
+		
+		// the new filename without extension
+		String newBaseFilename = FilenameUtils.getBaseName(filename);
+
+		
+		// persist the new filename to the database for the given videoConversion id
+		videoConversion.setSourceFilename(filename);
+		GenericDao.getInstance().update(videoConversion);
+		System.out.println("check");
+
+		// if there already exist files for the videoConversion we need to rename them
+		List<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
+		if (createdFiles != null) {
+			System.out.println("Created file exist");
+			for (CreatedFile createdFile: createdFiles) {
+				String oldFilePath = createdFile.getFilePath();
+				String newFilename = createdFile.getFilename().replace(oldBaseFilename, newBaseFilename);
+
+				createdFile.setFilename(newFilename);
+				GenericDao.getInstance().update(createdFile);
+				String newFilePath = createdFile.getFilePath();
+				try {
+					FileHandler.rename(oldFilePath, newFilePath);
+					videoConversion.setStatus(VideoConversionStatus.RENAMED);
+				} catch (IOException e) {
+					// if one file can not be renamed, stop the renaming process 
+					videoConversion.setStatus(VideoConversionStatus.ERROR_RENAMING);
+					//TODO: this should not be necessary if entity is managed by JPA/Hibernate
+					GenericDao.getInstance().update(videoConversion);
+					break;
+				}
+			}
+			//TODO: this should not be necessary if entity is managed by JPA/Hibernate
+			GenericDao.getInstance().update(videoConversion);
+		}
+	}
+
+	public void delete(Long id) {
+		// delete all created files from disk
+		
+		// delete from database
 	}
 }
