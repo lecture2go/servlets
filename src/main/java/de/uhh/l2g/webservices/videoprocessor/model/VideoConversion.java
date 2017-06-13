@@ -193,16 +193,16 @@ public class VideoConversion {
 	}
 
 	/**
-	 * @return the createdFile
+	 * @return the createdFiles
 	 */
-	/*public CreatedFile[] getCreatedFiles() {
+	public List<CreatedFile> getCreatedFiles() {
 		return createdFiles;
-	}*/
+	}
 
 	/**
-	 * @param createdFile the createdFile to set
+	 * @param createdFiles the createdFiles to set
 	 */
-	/*public void setCreatedFiles(CreatedFile[] createdFile) {
-		this.createdFiles = createdFile;
-	}*/
+	public void setCreatedFiles(List<CreatedFile> createdFiles) {
+		this.createdFiles = createdFiles;
+	}
 }
