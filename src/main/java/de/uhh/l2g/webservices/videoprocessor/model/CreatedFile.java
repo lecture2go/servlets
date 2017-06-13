@@ -12,6 +12,9 @@ import javax.persistence.InheritanceType;
 import javax.persistence.ManyToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
+import javax.persistence.Transient;
+
+import org.apache.commons.io.FilenameUtils;
 
 /*@MappedSuperclass*/
 @Entity
@@ -24,6 +27,9 @@ public class CreatedFile {
 	protected Long id;
 	
 	protected String filePath;
+	
+	@Transient
+	private String filename;
 
 	protected Date creationTime;
 
@@ -51,6 +57,21 @@ public class CreatedFile {
 	 */
 	public void setFilePath(String filePath) {
 		this.filePath = filePath;
+	}
+	
+	/**
+	 * @return the filename
+	 */
+	public String getFilename() {
+		return FilenameUtils.getName(filePath);
+	}
+
+	/**
+	 * @param filename the sourceFileName to set
+	 */
+	public void setFilename(String filename) {
+		String fullPath = FilenameUtils.getFullPath(filePath);
+		this.filePath = FilenameUtils.concat(fullPath, filename);
 	}
 
 	/**

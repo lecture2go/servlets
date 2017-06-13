@@ -11,15 +11,11 @@ import javax.persistence.Transient;
 import org.apache.commons.io.FilenameUtils;
 
 @Entity
-@Table(name = "createdvideo")
 public class CreatedVideo extends CreatedFile {
 
-
-	
 	//private String filePath;
 
-	@Transient
-	private String filename;
+
 
 	private int bitrateVideo = 0;
 
@@ -61,20 +57,7 @@ public class CreatedVideo extends CreatedFile {
 	}*/
 	
 
-	/**
-	 * @return the filename
-	 */
-	public String getFilename() {
-		return FilenameUtils.getName(filePath);
-	}
-
-	/**
-	 * @param filename the sourceFileName to set
-	 */
-	public void setFilename(String filename) {
-		String fullPath = FilenameUtils.getFullPath(filePath);
-		this.filePath = FilenameUtils.concat(fullPath, filename);
-	}
+	
 
 	/**
 	 * @return the bitrate
