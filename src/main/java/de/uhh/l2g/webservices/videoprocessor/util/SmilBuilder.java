@@ -58,16 +58,16 @@ public class SmilBuilder {
 			videoElement.setAttribute("src", video.getFilename());
 			videoElement.setAttribute("height", String.valueOf(video.getHeight()));
 			videoElement.setAttribute("width", String.valueOf(video.getWidth()));
-			// if there a seperate video and audio-bitrate is given use those
-			if ((video.getBitrateAudio() > 0) && (video.getBitrateVideo()) > 0) {
+			// if there a seperate video or audio-bitrate is given add those
+			if ((video.getBitrateAudio() > 0) || (video.getBitrateVideo()) > 0) {
 				Element videoParamElement = SmilBuilder.createParam("videoBitrate",video.getBitrateVideo(),doc);
 				videoElement.appendChild(videoParamElement);
 				Element audioParamElement = SmilBuilder.createParam("audioBitrate",video.getBitrateAudio(),doc);
 				videoElement.appendChild(audioParamElement);
-			} else {
-				// otherwise use the simple version with a overall bitrate
-				videoElement.setAttribute("system-bitrate", String.valueOf(video.getBitrate()));
-			}
+			} 
+			// add the overall bitrate
+			videoElement.setAttribute("system-bitrate", String.valueOf(video.getBitrate()));
+			
 			// add the video element to the switch node
 			switchElement.appendChild(videoElement);
 		}

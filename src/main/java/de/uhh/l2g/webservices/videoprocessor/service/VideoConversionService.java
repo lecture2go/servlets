@@ -144,8 +144,14 @@ public class VideoConversionService {
 			
 			// get the event details
 			//TODO: remove hardcoded publication channel
+			/*
 			Publication publication = OpencastApiCall.getPublication(videoConversion.getOpencastId(), "l2go");
 			List<CreatedVideo> createdVideos = mapPublicationToCreatedVideos(publication, videoConversion);
+			*/
+			
+			List<Video> videos = OpencastApiCall.getVideos(videoConversion.getOpencastId());
+			List<CreatedVideo> createdVideos = mapMediaToCreatedVideos(videos, videoConversion);
+			
 			
 			for(CreatedVideo createdVideo: createdVideos) {
 				downloadVideo(createdVideo, videoConversion);
@@ -201,12 +207,45 @@ public class VideoConversionService {
 		
 	}
 
+	private List<CreatedVideo> mapMediaToCreatedVideos(List<Video> videos, VideoConversion videoConversion) {
+		List<CreatedVideo> createdVideos = new ArrayList<CreatedVideo>();
+		for(Video video: videos) {
+			CreatedVideo createdVideo = new CreatedVideo();
+			// set reference to videoConversion object
+			createdVideo.setVideoConversion(videoConversion);
+			// map
+			
+			// videoBitrate
+			int videoBitrate = video.getStreams().getVideo1().getBitrate().intValue();
+			createdVideo.setBitrateVideo(video.getStreams().getVideo1().getBitrate().intValue());
+
+			// there may be videos without sound
+			int audioBitrate = 0;
+			if (video.getStreams().getAudio1() != null) {
+				audioBitrate = video.getStreams().getAudio1().getBitrate().intValue();
+			}
+			createdVideo.setBitrateAudio(audioBitrate);
+
+			// the overall bitrate result from videoBitrate and audioBitrate
+			createdVideo.setBitrate(videoBitrate + audioBitrate);
+			
+			createdVideo.setWidth(video.getStreams().getVideo1().getFramewidth().intValue());
+			createdVideo.setHeight(video.getStreams().getVideo1().getFrameheight().intValue());
+			createdVideo.setRemotePath(video.getUri());
+			
+			// add video to list of videos
+			createdVideos.add(createdVideo);
+		}
+		return createdVideos;
+	}
+
 	private List<CreatedVideo> mapPublicationToCreatedVideos(Publication publication, VideoConversion videoConversion) {
 		List<CreatedVideo> createdVideos = new ArrayList<CreatedVideo>();
 		for(Medium medium: publication.getMedia()) {
 			CreatedVideo createdVideo = new CreatedVideo();
 			// set reference to videoConversion object
 			createdVideo.setVideoConversion(videoConversion);
+			// map
 			createdVideo.setBitrate(medium.getBitrate());
 			createdVideo.setWidth(medium.getWidth());
 			createdVideo.setHeight(medium.getHeight());

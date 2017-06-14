@@ -30,6 +30,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.uhh.l2g.webservices.videoprocessor.model.opencast.Publication;
+import de.uhh.l2g.webservices.videoprocessor.model.opencast.Video;
 
 
 public class OpencastApiCall {
@@ -129,6 +130,16 @@ public class OpencastApiCall {
 		
 		
 		
+	}
+	
+	public static List<Video> getVideos(String opencastId) {
+		String mediaEndpoint = eventEndpoint + "/" + opencastId + "/media";
+		WebTarget target = prepareApiCall(mediaEndpoint);
+		
+		// saves a list of ob publications to a publications object
+		List<Video> videos = target.request(MediaType.APPLICATION_JSON_TYPE).get(new GenericType<List<Video>>() {});
+		
+		return videos;
 	}
 	
 	public static Publication getPublication(String opencastId, String publicationChannel) {
