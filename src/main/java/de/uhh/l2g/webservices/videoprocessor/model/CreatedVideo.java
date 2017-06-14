@@ -27,6 +27,9 @@ public class CreatedVideo extends CreatedFile {
 
 	private int bitrate;
 	
+	@Transient
+	private String remotePath;
+	
 
 	/**
 	 * @return the id
@@ -127,6 +130,20 @@ public class CreatedVideo extends CreatedFile {
 	 */
 	public void setHeight(int height) {
 		this.height = height;
+	}
+
+	/**
+	 * @return the remotePath
+	 */
+	public String getRemotePath() {
+		return remotePath;
+	}
+
+	/**
+	 * @param remotePath the remotePath to set
+	 */
+	public void setRemotePath(String remotePath) {
+		this.remotePath = remotePath;
 	}
 
 	
