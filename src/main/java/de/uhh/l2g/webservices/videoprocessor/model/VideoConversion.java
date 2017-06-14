@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Enumerated;
@@ -48,7 +49,7 @@ public class VideoConversion {
 
 	private String elapsedTime;
 	
-	@OneToMany(mappedBy = "videoConversion")
+	@OneToMany(mappedBy = "videoConversion", cascade={CascadeType.ALL})
 	private List<CreatedFile> createdFiles;
 	
 	//private CreatedFile[] createdFiles;
