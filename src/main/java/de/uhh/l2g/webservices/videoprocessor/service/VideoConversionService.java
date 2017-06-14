@@ -227,21 +227,19 @@ public class VideoConversionService {
 	
 	private void downloadVideo(CreatedVideo createdVideo) {
 		String sourceFilePath = videoConversion.getSourceFilePath();
-		
+
+		persistVideoConversionStatus(VideoConversionStatus.COPYING_FROM_OC);
+		// download the file with a temporary filename to avoid simulanteous writing to the same file  
+		String suffix = "_oc_" + String.valueOf(createdVideo.getWidth());
+		String targetFilePath = FilenameHandler.addToBasename(sourceFilePath, suffix);
 		try {
-			persistVideoConversionStatus(VideoConversionStatus.COPYING_FROM_OC);
-			// download the file with a temporary filename to avoid simulanteous writing to the same file  
-			String suffix = "_oc_" + String.valueOf(createdVideo.getWidth());
-			String targetFilePath = FilenameHandler.addToBasename(sourceFilePath, suffix);
-			
-			FileHandler.download(createdVideo.getRemotePath(), targetFilePath);
-			createdVideo.setFilePath(targetFilePath);
-			
+			OpencastApiCall.downloadFile(createdVideo.getRemotePath(), targetFilePath);
 		} catch (IOException e) {
 			persistVideoConversionStatus(VideoConversionStatus.ERROR_COPYING_FROM_OC);
 			return;
 		}
 		
+		createdVideo.setFilePath(targetFilePath);
 		
 		// persist the created video to database
 		GenericDao.getInstance().save(createdVideo);

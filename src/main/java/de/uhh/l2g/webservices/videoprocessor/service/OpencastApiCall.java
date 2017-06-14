@@ -1,7 +1,10 @@
 package de.uhh.l2g.webservices.videoprocessor.service;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +20,7 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.client.ClientProperties;
@@ -160,6 +164,19 @@ public class OpencastApiCall {
 		return correctPublication;
 	}
 	
+	public static void downloadFile(String remoteFilePath, String targetFilePath) throws IOException {
+		WebTarget target = OpencastApiCall.prepareOCCall(remoteFilePath);
+		
+		// saves the file
+		Response response = target.request().get();
+		if(response.getStatus() == Response.Status.OK.getStatusCode()) {
+			InputStream is = response.readEntity(InputStream.class);
+
+			FileUtils.copyInputStreamToFile(is, new File(targetFilePath));
+
+		}
+	}
+	
 	
 	/**
 	 * @param filepath the filepath of a file which will be send to opencast
@@ -210,6 +227,13 @@ public class OpencastApiCall {
 	private static WebTarget prepareApiCall(String endpoint) {
 		// TODO: change hardcoded to properties
 		String url = "http://opencast1.rrz.uni-hamburg.de:8080/api/";
+		
+		WebTarget target = prepareOCCall(url);
+		return target.path(endpoint);
+	}
+	
+	private static WebTarget prepareOCCall(String url) {
+		// TODO: change hardcoded to properties
 		String user = "admin";
 		String password = "opencast";
 		
@@ -222,10 +246,11 @@ public class OpencastApiCall {
 		client.property(ClientProperties.CHUNKED_ENCODING_SIZE, 1024);
 		client.property(ClientProperties.REQUEST_ENTITY_PROCESSING, "CHUNKED");
 				
-		WebTarget target = client.target(url).path(endpoint);
+		WebTarget target = client.target(url);
 		
 		return target;
 	}
+	
 	
 	
 	/**
