@@ -37,8 +37,9 @@ public class VideoConversionService {
 	}
 	
 	public void persistVideoConversionStatus(VideoConversionStatus status) {
-		videoConversion.setStatus(status);
 		//TODO: this should not be necessary if entity is managed by JPA/Hibernate
+		GenericDao.getInstance().get(VideoConversion.class, videoConversion.getSourceId());
+		videoConversion.setStatus(status);
 		GenericDao.getInstance().update(videoConversion);
 	}
 	
