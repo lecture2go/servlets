@@ -30,80 +30,59 @@ import de.uhh.l2g.webservices.videoprocessor.util.SmilBuilder;
 
 public class VideoConversionService {
 	
-	/* TODO set videoConversion as attribute and status change as method*/
+	private VideoConversion videoConversion;
 	
-	public void runVideoConversion(VideoConversion videoConversion) {
-		videoConversion.setStatus(VideoConversionStatus.COPYING_TO_OC);
-		
+	public VideoConversionService(VideoConversion videoConversion) {
+		this.videoConversion = videoConversion;
+	}
+	
+	public void persistVideoConversionStatus(VideoConversionStatus status) {
+		videoConversion.setStatus(status);
+		//TODO: this should not be necessary if entity is managed by JPA/Hibernate
+		GenericDao.getInstance().update(videoConversion);
+	}
+	
+	public void runVideoConversion() {		
 		// save metadata to database (id / path)
-		GenericDao genericDao = GenericDao.getInstance();
 		
 		// there is no autoincrement id, as the source id is used. a new videoconversion process results in the cleanup 
 		// of a current or finished videoconversion with the same id
-		VideoConversion videoConversionDb = genericDao.get(VideoConversion.class, videoConversion.getSourceId());
+		VideoConversion videoConversionDb = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getSourceId());
 		if (videoConversionDb != null) {
 			// delete old files
-			fileCleanup(videoConversion);
-			genericDao.deleteById(VideoConversion.class, videoConversionDb.getSourceId());
+			fileCleanup();
+			GenericDao.getInstance().deleteById(VideoConversion.class, videoConversionDb.getSourceId());
 			//genericDao.save(videoConversion);
 		}
-		videoConversion = genericDao.save(videoConversion);
+		videoConversion = GenericDao.getInstance().save(videoConversion);
+		
+		persistVideoConversionStatus(VideoConversionStatus.COPYING_TO_OC);
 		
 		// create a new opencast event via the opencast API
 		try {
 			String opencastId = OpencastApiCall.postNewEventRequest(videoConversion.getSourceFilePath(), videoConversion.getSourceFilename(), videoConversion.getSourceId());
 			videoConversion.setOpencastId(opencastId);
-			videoConversion.setStatus(VideoConversionStatus.OC_RUNNING);
-			genericDao.update(videoConversion);
+			persistVideoConversionStatus(VideoConversionStatus.OC_RUNNING);
 		} catch(BadRequestException e) {
-			videoConversion.setStatus(VideoConversionStatus.ERROR_COPYING_TO_OC_BAD_REQUEST);
-			genericDao.update(videoConversion);
+			persistVideoConversionStatus(VideoConversionStatus.ERROR_COPYING_TO_OC_BAD_REQUEST);
 			return;
 		} catch(WebApplicationException e) {
-			videoConversion.setStatus(VideoConversionStatus.ERROR_COPYING_TO_OC);
-			genericDao.update(videoConversion);
+			persistVideoConversionStatus(VideoConversionStatus.ERROR_COPYING_TO_OC);
 			return;
 		}
-		 
-		 
-		
-		// polling for status
-		
-		// if successful save files to filesystem and name them
-		/*
-		String testvideo = "http://134.100.84.23:8080/static/mh_default_org/l2go/5003991e-2569-4f1b-993a-08ae17760bc6/8f6d39e6-dd4c-4a9c-9275-84671703da04/a.mp4";
-		
-		videoConversion.setStatus(VideoConversionStatus.COPYING_FROM_OC);
-		//TODO: this should not be necessary if entity is managed by JPA/Hibernate
-		genericDao.update(videoConversion);
-		
-		try {
-			FileHandler.download(testvideo, target);
-		} catch (Exception e) {
-			videoConversion.setStatus(VideoConversionStatus.ERROR_COPYING_FROM_OC);
-			return;
-		}
-		*/
-
-		// create SMIL file and save it to the filesystem
-		
-		// remove files from opencast
-		
 	}
 	
 	/**
 	 * Deletes all files in the filesystem for an VideoConversion object
-	 * @param videoConversion the VideoConversion object whose files are deleted
 	 */
-	private void fileCleanup(VideoConversion videoConversion) {
+	private void fileCleanup() {
 		List<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
 		if (createdFiles != null) {
 			for(CreatedFile createdFile: createdFiles) {
 				try {
 					FileHandler.deleteIfExists(createdFile.getFilePath());
 				} catch (Exception e) {
-					videoConversion.setStatus(VideoConversionStatus.ERROR_DELETING);
-					GenericDao.getInstance().update(videoConversion);
+					persistVideoConversionStatus(VideoConversionStatus.ERROR_DELETING);
 					// TODO: log
 					e.printStackTrace();
 				}
@@ -111,18 +90,16 @@ public class VideoConversionService {
 		}
 	}
 
-	public void handleOpencastResponse(Long id, Boolean success) {
+	public void handleOpencastResponse(Boolean success) {
 		// get the corresponding videoconversion object
 		GenericDao genericDao = GenericDao.getInstance();
-		VideoConversion videoConversion = genericDao.get(VideoConversion.class, id);
+		//VideoConversion videoConversion = genericDao.get(VideoConversion.class, id);
 		
 		if (success) {
 			// the opencast workflow was successful
 			
 			// update the status of the video conversion
-			videoConversion.setStatus(VideoConversionStatus.OC_SUCCEEDED);
-			//TODO: this should not be necessary if entity is managed by JPA/Hibernate
-			genericDao.update(videoConversion);
+			persistVideoConversionStatus(VideoConversionStatus.OC_SUCCEEDED);
 			
 			// test without API call:
 			/*
@@ -150,12 +127,11 @@ public class VideoConversionService {
 			*/
 			
 			List<Video> videos = OpencastApiCall.getVideos(videoConversion.getOpencastId());
-			List<CreatedVideo> createdVideos = mapMediaToCreatedVideos(videos, videoConversion);
-			
+			List<CreatedVideo> createdVideos = mapMediaToCreatedVideos(videos);
 			
 			for(CreatedVideo createdVideo: createdVideos) {
-				downloadVideo(createdVideo, videoConversion);
-				renameVideo(createdVideo, videoConversion);
+				downloadVideo(createdVideo);
+				renameVideo(createdVideo);
 			}
 		
 			// build SMIL file
@@ -169,13 +145,11 @@ public class VideoConversionService {
 				FileHandler.deleteIfExists(smilFilePath);
 			} catch (SecurityException e) {
 				// no permission to delete
-				videoConversion.setStatus(VideoConversionStatus.ERROR_DELETING);
-				GenericDao.getInstance().update(videoConversion);
+				persistVideoConversionStatus(VideoConversionStatus.ERROR_DELETING);
 			}
 			
 			try {
-				videoConversion.setStatus(VideoConversionStatus.CREATING_SMIL);
-				GenericDao.getInstance().update(videoConversion);
+				persistVideoConversionStatus(VideoConversionStatus.CREATING_SMIL);
 				SmilBuilder.buildSmil(smilFilePath, createdVideos);
 				// persist smil file as a createdFile object to database
 				CreatedFile smilFile = new CreatedFile();
@@ -183,31 +157,25 @@ public class VideoConversionService {
 				smilFile.setVideoConversion(videoConversion);
 				GenericDao.getInstance().save(smilFile);
 			} catch (ParserConfigurationException | TransformerException e) {
-				videoConversion.setStatus(VideoConversionStatus.ERROR_CREATING_SMIL);
-				GenericDao.getInstance().update(videoConversion);
+				persistVideoConversionStatus(VideoConversionStatus.ERROR_CREATING_SMIL);
 				e.printStackTrace();
 			}
 			
-			
 			//TODO: delete files in opencast
 			
-			
+	
 			// the process is finished
-			videoConversion.setStatus(VideoConversionStatus.FINISHED);
-			GenericDao.getInstance().update(videoConversion);
-			
+			persistVideoConversionStatus(VideoConversionStatus.FINISHED);
 		} else {
 			// the opencast workflow failed
 			
 			// update the status of the video conversion
-			videoConversion.setStatus(VideoConversionStatus.ERROR_OC_FAILED);
-			//TODO: this should not be necessary if entity is managed by JPA/Hibernate
-			genericDao.update(videoConversion);
+			persistVideoConversionStatus(VideoConversionStatus.ERROR_OC_FAILED);
 		}
 		
 	}
 
-	private List<CreatedVideo> mapMediaToCreatedVideos(List<Video> videos, VideoConversion videoConversion) {
+	private List<CreatedVideo> mapMediaToCreatedVideos(List<Video> videos) {
 		List<CreatedVideo> createdVideos = new ArrayList<CreatedVideo>();
 		for(Video video: videos) {
 			CreatedVideo createdVideo = new CreatedVideo();
@@ -239,7 +207,7 @@ public class VideoConversionService {
 		return createdVideos;
 	}
 
-	private List<CreatedVideo> mapPublicationToCreatedVideos(Publication publication, VideoConversion videoConversion) {
+	private List<CreatedVideo> mapPublicationToCreatedVideos(Publication publication) {
 		List<CreatedVideo> createdVideos = new ArrayList<CreatedVideo>();
 		for(Medium medium: publication.getMedia()) {
 			CreatedVideo createdVideo = new CreatedVideo();
@@ -257,42 +225,42 @@ public class VideoConversionService {
 		return createdVideos;
 	}
 	
-	private void downloadVideo(CreatedVideo createdVideo, VideoConversion videoConversion) {
+	private void downloadVideo(CreatedVideo createdVideo) {
 		String sourceFilePath = videoConversion.getSourceFilePath();
 		
 		try {
-			videoConversion.setStatus(VideoConversionStatus.COPYING_FROM_OC);
-			GenericDao.getInstance().update(videoConversion);
+			persistVideoConversionStatus(VideoConversionStatus.COPYING_FROM_OC);
 			// download the file with a temporary filename to avoid simulanteous writing to the same file  
 			String suffix = "_oc_" + String.valueOf(createdVideo.getWidth());
 			String targetFilePath = FilenameHandler.addToBasename(sourceFilePath, suffix);
+			
 			FileHandler.download(createdVideo.getRemotePath(), targetFilePath);
 			createdVideo.setFilePath(targetFilePath);
+			
 		} catch (IOException e) {
-			videoConversion.setStatus(VideoConversionStatus.ERROR_COPYING_FROM_OC);
-			GenericDao.getInstance().update(videoConversion);
+			persistVideoConversionStatus(VideoConversionStatus.ERROR_COPYING_FROM_OC);
 			return;
 		}
+		
 		
 		// persist the created video to database
 		GenericDao.getInstance().save(createdVideo);
 	}
 	
-	private void renameVideo(CreatedVideo createdVideo, VideoConversion videoConversion) {
+	private void renameVideo(CreatedVideo createdVideo) {
 		// while downloading the files there may have been a filename change, reload the object
 		videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getSourceId());
 		// rename the file with an added width, example "originalname_1920.mp4"
 		String filePath = FilenameHandler.addToBasename(videoConversion.getSourceFilePath(), "_" + createdVideo.getWidth());
 		
 		// rename
-		videoConversion.setStatus(VideoConversionStatus.RENAMING);
-		GenericDao.getInstance().update(videoConversion);
+		persistVideoConversionStatus(VideoConversionStatus.RENAMING);
 		
 		try {
 			FileHandler.rename(createdVideo.getFilePath(), filePath);
 		} catch (IOException e) {
-			videoConversion.setStatus(VideoConversionStatus.ERROR_RENAMING);
-			GenericDao.getInstance().update(videoConversion);
+			persistVideoConversionStatus(VideoConversionStatus.ERROR_RENAMING);
+
 			e.printStackTrace();
 			return;
 		}
@@ -300,8 +268,8 @@ public class VideoConversionService {
 		GenericDao.getInstance().update(createdVideo);
 	}
 
-	public void renameFiles(Long id, String filename) {
-		VideoConversion videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
+	public void renameFiles(String filename) {
+		//VideoConversion videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
 		
 		// this is the old filename without extension, which provides the foundation for the renaming
 		String oldBaseFilename = FilenameUtils.getBaseName(videoConversion.getSourceFilename());
@@ -328,17 +296,13 @@ public class VideoConversionService {
 				String newFilePath = createdFile.getFilePath();
 				try {
 					FileHandler.rename(oldFilePath, newFilePath);
-					videoConversion.setStatus(VideoConversionStatus.RENAMED);
+					persistVideoConversionStatus(VideoConversionStatus.RENAMED);
 				} catch (IOException e) {
+					persistVideoConversionStatus(VideoConversionStatus.ERROR_RENAMING);
 					// if one file can not be renamed, stop the renaming process 
-					videoConversion.setStatus(VideoConversionStatus.ERROR_RENAMING);
-					//TODO: this should not be necessary if entity is managed by JPA/Hibernate
-					GenericDao.getInstance().update(videoConversion);
 					break;
 				}
 			}
-			//TODO: this should not be necessary if entity is managed by JPA/Hibernate
-			GenericDao.getInstance().update(videoConversion);
 		}
 	}
 

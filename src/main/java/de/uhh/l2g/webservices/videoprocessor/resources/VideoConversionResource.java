@@ -44,8 +44,9 @@ public class VideoConversionResource {
 	@PUT
 	@Consumes(MediaType.APPLICATION_JSON) 
 	public Response postFilenameForVideoConversion(HashMap<String,String> filenameMap) {
-		VideoConversionService vc = new VideoConversionService();
-		vc.renameFiles(id, filenameMap.get("sourceFileName"));
+		VideoConversion videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
+		VideoConversionService vc = new VideoConversionService(videoConversion);
+		vc.renameFiles(filenameMap.get("sourceFileName"));
 		
 		return null;
 	}
@@ -53,8 +54,9 @@ public class VideoConversionResource {
 	@PUT
 	@Consumes({MediaType.APPLICATION_FORM_URLENCODED})
 	public void putVideoConversionFormData(@FormParam("message") Boolean success) {
-		VideoConversionService vc = new VideoConversionService();
-		vc.handleOpencastResponse(id, success);
+		VideoConversion videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
+		VideoConversionService vc = new VideoConversionService(videoConversion);
+		vc.handleOpencastResponse(success);
 	}
 	
 	
@@ -62,7 +64,8 @@ public class VideoConversionResource {
 	@DELETE
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response deleteVideoConversion() {
-		VideoConversionService vc = new VideoConversionService();
+		VideoConversion videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
+		VideoConversionService vc = new VideoConversionService(videoConversion);
 		//vc.delete(id);
 
 		return null;

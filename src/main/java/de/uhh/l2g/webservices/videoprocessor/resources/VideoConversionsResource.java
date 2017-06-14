@@ -31,8 +31,8 @@ public class VideoConversionsResource {
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response postVideoConversions(VideoConversion videoConversion) {
-		VideoConversionService vc = new VideoConversionService();
-		vc.runVideoConversion(videoConversion);
+		VideoConversionService vc = new VideoConversionService(videoConversion);
+		vc.runVideoConversion();
 		return null;
 	}
 }
