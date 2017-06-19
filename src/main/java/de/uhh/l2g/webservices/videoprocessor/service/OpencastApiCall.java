@@ -37,35 +37,14 @@ import de.uhh.l2g.webservices.videoprocessor.model.opencast.Publication;
 import de.uhh.l2g.webservices.videoprocessor.model.opencast.Video;
 
 
+
+/**
+ * Used for making calls to the opencast api
+ */
 public class OpencastApiCall {
 	
 	public static String eventEndpoint = "events";
 
-	
-	/**
-	 * Sends an request to the opencast API
-	 */
-	static Response sendRequest(String endpoint, String requestType) {
-		/*
-		
-		// TODO: change hardcoded to properties
-		String url = "http://opencast1.rrz.uni-hamburg.de:8080/api/";
-		String user = "admin";
-		String password = "opencast";
-		
-		// authentication
-		HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic(user,password);
-		
-		Client client = ClientBuilder.newClient().register(feature);
-		WebTarget target = client.target(url).path(endpoint);
-		
-		target.request(MediaType.APPLICATION_JSON_TYPE);
-		
-		*/
-		return null;
-		
-	}
-	
 	/**
 	 * Sends a post request to the opencast API events endpoint.
 	 * This creates a new event on the opencast system with the given video file
@@ -75,9 +54,6 @@ public class OpencastApiCall {
 	 * @return the response from the opencast API
 	 */
 	static String postNewEventRequest(String filepath, String title, Long sourceId) {
-		// TODO: change hardcoded to properties
-		//String eventEndpoint = "events";
-		
 		// prepare the api call
 		WebTarget target = prepareApiCall(eventEndpoint);
 		
@@ -136,6 +112,11 @@ public class OpencastApiCall {
 		
 	}
 	
+	/**
+	 * Gets a list of videos for an opencast-Id from the opencast event endpoint
+	 * @param opencastId the opencastId whose video are extracted
+	 * @return a list of video objects
+	 */
 	public static List<Video> getVideos(String opencastId) {
 		String mediaEndpoint = eventEndpoint + "/" + opencastId + "/media";
 		WebTarget target = prepareApiCall(mediaEndpoint);
@@ -146,6 +127,13 @@ public class OpencastApiCall {
 		return videos;
 	}
 	
+	
+	/**
+	 * Get the publication object which all media included for an opencast-Id from the opencast event endpoint
+	 * @param opencastId the opencastId whose publication is extracted 
+	 * @param publicationChannel the publication channel name
+	 * @return returns the publications with all media included
+	 */
 	public static Publication getPublication(String opencastId, String publicationChannel) {
 		String publicationsEndpoint = eventEndpoint + "/" + opencastId + "/publications";
 		WebTarget target = prepareApiCall(publicationsEndpoint);
@@ -153,19 +141,26 @@ public class OpencastApiCall {
 		// saves a list of ob publications to a publications object
 		List<Publication>publications = target.request(MediaType.APPLICATION_JSON_TYPE).get(new GenericType<List<Publication>>() {});
 		
-		// check for correct publication
-		Publication correctPublication = null;
+		// check for the publication with the given channel name
+		Publication publicationForChannel = null;
 		for (Publication publication: publications) {
 			if (publication.getChannel().equalsIgnoreCase(publicationChannel)) {
-				correctPublication = publication;
+				publicationForChannel = publication;
 			}
 		}
 		
-		return correctPublication;
+		return publicationForChannel;
 	}
 	
+	
+	/**
+	 * Downloads a file from opencast using authentification
+	 * @param remoteFilePath the url on the oc server
+	 * @param targetFilePath the filepath on the own server
+	 * @throws IOException
+	 */
 	public static void downloadFile(String remoteFilePath, String targetFilePath) throws IOException {
-		WebTarget target = OpencastApiCall.prepareOCCall(remoteFilePath);
+		WebTarget target = OpencastApiCall.prepareOcCall(remoteFilePath);
 		
 		// saves the file
 		Response response = target.request().get();
@@ -177,50 +172,8 @@ public class OpencastApiCall {
 		}
 	}
 	
-	
 	/**
-	 * @param filepath the filepath of a file which will be send to opencast
-	 * @param opencastId the opencast-event-id to which the file is added
-	 */
-	/*static void postFileToEvent(String filepath,String opencastId) {
-		// TODO: change hardcoded to properties
-		String eventEndpoint = OpencastApiCall.eventEndpoint + "/" + opencastId;
-		
-		// prepare the api call
-		WebTarget target = prepareApiCall(eventEndpoint);
-		
-		// multipart bodyreader must be initiated
-        target.register(MultiPartFeature.class);
-				
-		// create the multipart form data
-		FormDataMultiPart multiPart = new FormDataMultiPart();
-		
-		// create the parts necessary for the the request
-		String processing = createProcessingJson();
-		multiPart.bodyPart(new FormDataBodyPart("processing",processing));
-
-		// the file is sent as a stream to the API to guarantee delivery of even huge files
-		FileInputStream fileInputStream = null;
-		try {
-			fileInputStream = new FileInputStream(filepath);
-			multiPart.bodyPart(new StreamDataBodyPart("presenter",fileInputStream));
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		// send the post request
-		Response response = target.request(MediaType.APPLICATION_JSON_TYPE).post(Entity.entity(multiPart, MediaType.MULTIPART_FORM_DATA_TYPE));
-		
-		// TODO: error handling if (response.getHeader) ....
-		
-		// after sending the request, close the inputStream
-		IOUtils.closeQuietly(fileInputStream);
-	}*/
-
-	
-	/**
-	 * Prepares the API call with authentication
+	 * Prepares the API call
 	 * @param endpoint the endpoint which should be called
 	 * @return a web target to connect to
 	 */
@@ -228,11 +181,17 @@ public class OpencastApiCall {
 		// TODO: change hardcoded to properties
 		String url = "http://opencast1.rrz.uni-hamburg.de:8080/api/";
 		
-		WebTarget target = prepareOCCall(url);
+		WebTarget target = prepareOcCall(url);
 		return target.path(endpoint);
 	}
 	
-	private static WebTarget prepareOCCall(String url) {
+	
+	/**
+	 * Sets the authentication and client configuration for an call to the opencast server 
+	 * @param url to connect to
+	 * @return a WebTarget object which will be used for the connection
+	 */
+	private static WebTarget prepareOcCall(String url) {
 		// TODO: change hardcoded to properties
 		String user = "admin";
 		String password = "opencast";
@@ -252,9 +211,8 @@ public class OpencastApiCall {
 	}
 	
 	
-	
 	/**
-	 * Creates an opencast-compatible acl json string
+	 * Creates an opencast-compatible acl json string (used for a new event request)
 	 * @return the processing info as as json string
 	 */
 	private static String createAclJson() {
@@ -285,7 +243,7 @@ public class OpencastApiCall {
 	
 	
 	/**
-	 * Creates an opencast-compatible processing json string
+	 * Creates an opencast-compatible processing json string (used for a new event request)
 	 * @return the processing info as as json string
 	 */
 	private static String createProcessingJson(Long id) {
@@ -309,7 +267,7 @@ public class OpencastApiCall {
 	
 	/**
 	 * Creates a simplied version of the opencast dublincore metadata to transfer
-	 * title and id to opencast
+	 * title and id to opencast  (used for a new event request)
 	 * @param title the title of the video
 	 * @param id the id of the video
 	 * @return a serialized json object of the metadata
