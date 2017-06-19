@@ -53,8 +53,8 @@ public class VideoConversionService {
 		if (videoConversionDb != null) {
 			// delete old files
 			fileCleanup();
+			// delete old videoConversion from database
 			GenericDao.getInstance().deleteById(VideoConversion.class, videoConversionDb.getSourceId());
-			//genericDao.save(videoConversion);
 		}
 		videoConversion = GenericDao.getInstance().save(videoConversion);
 		
@@ -176,6 +176,7 @@ public class VideoConversionService {
 		} else {
 			// the opencast workflow failed
 			
+			/*
 			// delete event (and files) in opencast
 			try {
 				OpencastApiCall.deleteEvent(videoConversion.getOpencastId());
@@ -183,6 +184,7 @@ public class VideoConversionService {
 				persistVideoConversionStatus(VideoConversionStatus.ERROR_DELETING_FROM_OC);
 				return;
 			}
+			*/
 			
 			// update the status of the video conversion
 			persistVideoConversionStatus(VideoConversionStatus.ERROR_OC_FAILED);
