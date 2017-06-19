@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.WebApplicationException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -162,13 +163,26 @@ public class VideoConversionService {
 				e.printStackTrace();
 			}
 			
-			//TODO: delete files in opencast
-			
+			// delete event (and files) in opencast
+			try {
+				OpencastApiCall.deleteEvent(videoConversion.getOpencastId());
+			} catch(Exception e) {
+				persistVideoConversionStatus(VideoConversionStatus.ERROR_DELETING_FROM_OC);
+				return;
+			}
 	
 			// the process is finished
 			persistVideoConversionStatus(VideoConversionStatus.FINISHED);
 		} else {
 			// the opencast workflow failed
+			
+			// delete event (and files) in opencast
+			try {
+				OpencastApiCall.deleteEvent(videoConversion.getOpencastId());
+			} catch(Exception e) {
+				persistVideoConversionStatus(VideoConversionStatus.ERROR_DELETING_FROM_OC);
+				return;
+			}
 			
 			// update the status of the video conversion
 			persistVideoConversionStatus(VideoConversionStatus.ERROR_OC_FAILED);
@@ -306,8 +320,11 @@ public class VideoConversionService {
 	}
 
 	public void delete(Long id) {
+		
 		// delete all created files from disk
 		
 		// delete from database
+		
+		
 	}
 }

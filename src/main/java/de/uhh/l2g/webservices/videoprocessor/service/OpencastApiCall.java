@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -25,6 +26,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
+import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
@@ -80,7 +82,7 @@ public class OpencastApiCall {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		// send the post request
 		Response response = null;
 		try {
@@ -114,11 +116,11 @@ public class OpencastApiCall {
 	
 	/**
 	 * Gets a list of videos for an opencast-Id from the opencast event endpoint
-	 * @param opencastId the opencastId whose video are extracted
+	 * @param opencastEventId the opencastEventId whose video are extracted
 	 * @return a list of video objects
 	 */
-	public static List<Video> getVideos(String opencastId) {
-		String mediaEndpoint = eventEndpoint + "/" + opencastId + "/media";
+	public static List<Video> getVideos(String opencastEventId) {
+		String mediaEndpoint = eventEndpoint + "/" + opencastEventId + "/media";
 		WebTarget target = prepareApiCall(mediaEndpoint);
 		
 		// saves a list of ob publications to a publications object
@@ -130,12 +132,12 @@ public class OpencastApiCall {
 	
 	/**
 	 * Get the publication object which all media included for an opencast-Id from the opencast event endpoint
-	 * @param opencastId the opencastId whose publication is extracted 
+	 * @param opencastEventId the opencastEventId whose publication is extracted 
 	 * @param publicationChannel the publication channel name
 	 * @return returns the publications with all media included
 	 */
-	public static Publication getPublication(String opencastId, String publicationChannel) {
-		String publicationsEndpoint = eventEndpoint + "/" + opencastId + "/publications";
+	public static Publication getPublication(String opencastEventId, String publicationChannel) {
+		String publicationsEndpoint = eventEndpoint + "/" + opencastEventId + "/publications";
 		WebTarget target = prepareApiCall(publicationsEndpoint);
 		
 		// saves a list of ob publications to a publications object
@@ -169,6 +171,24 @@ public class OpencastApiCall {
 
 			FileUtils.copyInputStreamToFile(is, new File(targetFilePath));
 
+		}
+	}
+	
+	public static boolean deleteEvent(String opencastEventId) throws NotFoundException, WebApplicationException {
+		String eventEndpointForId = eventEndpoint + "/" + opencastEventId;
+		WebTarget target = prepareApiCall(eventEndpointForId);
+		
+		Response response = target.request().accept(MediaType.APPLICATION_JSON).delete();
+		switch (response.getStatus()) {
+		case 204:
+			// deletion was successfull
+			return true;
+		case 404:
+			// event id not found
+			throw new NotFoundException();
+		default:
+			// other general error
+			throw new WebApplicationException();
 		}
 	}
 	
