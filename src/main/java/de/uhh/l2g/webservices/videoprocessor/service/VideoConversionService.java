@@ -319,11 +319,13 @@ public class VideoConversionService {
 		}
 	}
 
-	public void delete(Long id) {
+	public void delete() {
 		
 		// delete all created files from disk
+		fileCleanup();
 		
 		// delete from database
+		GenericDao.getInstance().deleteById(VideoConversion.class, videoConversion.getSourceId());
 		
 		
 	}

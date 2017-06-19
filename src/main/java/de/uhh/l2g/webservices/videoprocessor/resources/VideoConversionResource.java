@@ -66,7 +66,7 @@ public class VideoConversionResource {
 	public Response deleteVideoConversion() {
 		VideoConversion videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
 		VideoConversionService vc = new VideoConversionService(videoConversion);
-		//vc.delete(id);
+		vc.delete();
 
 		return null;
 	}
