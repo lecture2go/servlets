@@ -7,6 +7,8 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -29,26 +31,28 @@ public class VideoConversionResource {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public VideoConversion getVideoConversion() {
-		return GenericDao.getInstance().get(VideoConversion.class, id);
+		VideoConversion videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
+		if (videoConversion == null) {
+			// the default ExceptionMapper takes care of the correct header status code
+            throw new NotFoundException();
+		}
+		return videoConversion;
 	}
 	
 
-	@PUT
-	@Consumes({MediaType.APPLICATION_JSON})
-	public Response putVideoConversion(VideoConversion videoConversion) {
-		VideoConversion videoConversionDb = GenericDao.getInstance().get(VideoConversion.class, id);
-		return null;
-	}
 	
 	@Path("filename")
 	@PUT
-	@Consumes(MediaType.APPLICATION_JSON) 
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response postFilenameForVideoConversion(HashMap<String,String> filenameMap) {
 		VideoConversion videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
 		VideoConversionService vc = new VideoConversionService(videoConversion);
-		vc.renameFiles(filenameMap.get("sourceFileName"));
-		
-		return null;
+		if (vc.renameFiles(filenameMap.get("sourceFileName"))) {
+			return Response.ok().build();
+		} else {
+			throw new InternalServerErrorException();
+		}
 	}
 	
 	@PUT
@@ -63,11 +67,14 @@ public class VideoConversionResource {
 	
 	@DELETE
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response deleteVideoConversion() {
 		VideoConversion videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
 		VideoConversionService vc = new VideoConversionService(videoConversion);
-		vc.delete();
-
-		return null;
+		if (vc.delete()) {
+			return Response.ok().build();
+		} else {
+			throw new InternalServerErrorException();
+		}
 	}
 }
