@@ -12,6 +12,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -35,6 +37,7 @@ import de.uhh.l2g.webservices.videoprocessor.util.SmilBuilder;
  */
 public class VideoConversionService {
 	
+	private static final Logger logger = LogManager.getLogger(VideoConversionService.class);
 	private VideoConversion videoConversion;
 	
 	public VideoConversionService(VideoConversion videoConversion) {
@@ -50,13 +53,17 @@ public class VideoConversionService {
 		GenericDao.getInstance().get(VideoConversion.class, videoConversion.getSourceId());
 		videoConversion.setStatus(status);
 		GenericDao.getInstance().update(videoConversion);
+		logger.info("The new status of the videoConversion with source id {} is {}", videoConversion.getSourceId(), status);
 	}
 	
 	/**
 	 * This runs the actual video conversion
 	 * A new event request with the file is sent to opencast to do the heavy lifting
 	 */
-	public void runVideoConversion() {		
+	public VideoConversion runVideoConversion() {		
+
+		logger.info("A new videoConversion is started for the sourceId {}", videoConversion.getSourceId());
+
 		// save metadata to database (id / path)
 		
 		// there is no autoincrement id, as the source id is used. a new videoconversion process results in the cleanup 
@@ -77,11 +84,12 @@ public class VideoConversionService {
 			persistVideoConversionStatus(VideoConversionStatus.OC_RUNNING);
 		} catch(BadRequestException e) {
 			persistVideoConversionStatus(VideoConversionStatus.ERROR_COPYING_TO_OC_BAD_REQUEST);
-			return;
+			return null;
 		} catch(WebApplicationException e) {
 			persistVideoConversionStatus(VideoConversionStatus.ERROR_COPYING_TO_OC);
-			return;
+			return null;
 		}
+		return videoConversion;
 	}
 	
 	/**
@@ -93,6 +101,7 @@ public class VideoConversionService {
 	 * @param success true if oc has succeeded, false if there was an error
 	 */
 	public void handleOpencastResponse(Boolean success) {
+		logger.info("Opencast has sent a http-notify for videoConversion with sourceId {} with the result: {}", videoConversion.getSourceId(), Boolean.toString(success));
 		if (success) {
 			// the opencast workflow was successful
 			persistVideoConversionStatus(VideoConversionStatus.OC_SUCCEEDED);
@@ -142,7 +151,9 @@ public class VideoConversionService {
 	 * Renames all created files to the new filename
 	 * @param filename
 	 */
-	public void renameFiles(String filename) {		
+	public boolean renameFiles(String filename) {
+		logger.info("Renaming Files for videoConversion with sourceId {} to {}", videoConversion.getSourceId(), filename);
+
 		// this is the old filename without extension, which provides the foundation for the renaming
 		String oldBaseFilename = FilenameUtils.getBaseName(videoConversion.getSourceFilename());
 		
@@ -164,29 +175,35 @@ public class VideoConversionService {
 				GenericDao.getInstance().update(createdFile);
 				String newFilePath = createdFile.getFilePath();
 				try {
+					// delete the old file if somehow existing
+					FileHandler.deleteIfExists(newFilePath);
 					FileHandler.rename(oldFilePath, newFilePath);
 					persistVideoConversionStatus(VideoConversionStatus.RENAMED);
 				} catch (IOException e) {
 					persistVideoConversionStatus(VideoConversionStatus.ERROR_RENAMING);
 					// if one file can not be renamed, stop the renaming process 
-					break;
+					return false;
 				}
 			}
 		}
+		return true;
 	}
 	
 
 	/**
 	 * The current videoConversion object is deleted (including files and database entries)
+	 * @return 
 	 */
-	public void delete() {
-		cleanup();	
+	public boolean delete() {
+		logger.info("Delete Everything for videoConversion with sourceId {}", videoConversion.getSourceId());
+		return cleanup();	
 	}
 
 	/**
 	 * Deletes all files in the filesystem for the VideoConversion object
+	 * @return 
 	 */
-	private void fileCleanup() {
+	private boolean fileCleanup() {
 		List<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
 		if (createdFiles != null) {
 			for(CreatedFile createdFile: createdFiles) {
@@ -196,9 +213,11 @@ public class VideoConversionService {
 					persistVideoConversionStatus(VideoConversionStatus.ERROR_DELETING);
 					// TODO: log
 					e.printStackTrace();
+					return false;
 				}
 			}
 		}
+		return true;
 	}
 	
 
@@ -207,6 +226,7 @@ public class VideoConversionService {
 	 * @param createdVideos
 	 */
 	private void buildSmil(List<CreatedVideo> createdVideos) {
+		logger.info("Build a SMIL file for videoConversion with sourceId {}", videoConversion.getSourceId());
 		// the SMIL file will be written to the same folder as the created videos
 		String smilFullPath = FilenameUtils.getFullPath(videoConversion.getSourceFilePath());
 		String smilFilename = FilenameUtils.getBaseName(videoConversion.getSourceFilename()) + ".smil";
@@ -235,20 +255,25 @@ public class VideoConversionService {
 	
 	/**
 	 * Runs the cleanup for the current videoConversion object
+	 * @return 
 	 */
-	private void cleanup() {
-		cleanup(videoConversion);
+	private boolean cleanup() {
+		return cleanup(videoConversion);
 	}
 	
 	/**
 	 * Runs the cleanup (file and database deletion) for a given videoConversion object
+	 * @return 
 	 */
-	private void cleanup(VideoConversion videoConversion) {
+	private boolean cleanup(VideoConversion videoConversion) {
 		// delete all created files from disk
-		fileCleanup();
-		
-		// delete from database
-		GenericDao.getInstance().deleteById(VideoConversion.class, videoConversion.getSourceId());
+		if (fileCleanup()){
+			// delete from database
+			GenericDao.getInstance().deleteById(VideoConversion.class, videoConversion.getSourceId());
+			return true;
+		} else {
+			return false;
+		}
 	}
 	
 
@@ -342,6 +367,7 @@ public class VideoConversionService {
 	 * @param createdVideo
 	 */
 	private void renameVideo(CreatedVideo createdVideo) {
+		logger.info("Renaming Video for videoConversion with sourceId {} to {} (path: {})", videoConversion.getSourceId(), createdVideo.getFilename(), createdVideo.getFilePath());
 		// rename the file with an added width, example "originalname_1920.mp4"
 		String filePath = FilenameHandler.addToBasename(videoConversion.getSourceFilePath(), "_" + createdVideo.getWidth());
 		
@@ -349,6 +375,8 @@ public class VideoConversionService {
 		persistVideoConversionStatus(VideoConversionStatus.RENAMING);
 		
 		try {
+			// delete the old video if somehow existing
+			FileHandler.deleteIfExists(filePath);
 			FileHandler.rename(createdVideo.getFilePath(), filePath);
 		} catch (IOException e) {
 			persistVideoConversionStatus(VideoConversionStatus.ERROR_RENAMING);
