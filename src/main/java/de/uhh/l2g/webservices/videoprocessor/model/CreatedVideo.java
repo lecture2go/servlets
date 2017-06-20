@@ -13,10 +13,6 @@ import org.apache.commons.io.FilenameUtils;
 @Entity
 public class CreatedVideo extends CreatedFile {
 
-	//private String filePath;
-
-
-
 	private int bitrateVideo = 0;
 
 	private int bitrateAudio = 0;
@@ -29,38 +25,6 @@ public class CreatedVideo extends CreatedFile {
 	
 	@Transient
 	private String remotePath;
-	
-
-	/**
-	 * @return the id
-	 */
-	public Long getId() {
-		return id;
-	}
-
-	/**
-	 * @param id the id to set
-	 */
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-	/**
-	 * @return the filePath
-	 */
-	/*public String getFilePath() {
-		return filePath;
-	}*/
-
-	/**
-	 * @param filePath the filePath to set
-	 */
-	/*public void setFilePath(String filePath) {
-		this.filePath = filePath;
-	}*/
-	
-
-	
 
 	/**
 	 * @return the bitrate

@@ -16,9 +16,14 @@ import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.EnumType;
+import javax.persistence.Temporal;
 import javax.persistence.Transient;
+import javax.persistence.TemporalType;
 
 import org.apache.commons.io.FilenameUtils;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 
 @Entity
@@ -45,11 +50,13 @@ public class VideoConversion {
 	private VideoConversionStatus status;
 	
 	@Column(updatable = false)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Europe/Berlin")
 	private Date startTime;
 
 	private String elapsedTime;
 	
 	@OneToMany(mappedBy = "videoConversion", cascade={CascadeType.ALL})
+	@JsonManagedReference
 	private List<CreatedFile> createdFiles;
 	
 	//private CreatedFile[] createdFiles;

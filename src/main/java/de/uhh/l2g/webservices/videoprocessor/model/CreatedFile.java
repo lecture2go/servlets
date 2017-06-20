@@ -16,6 +16,9 @@ import javax.persistence.Transient;
 
 import org.apache.commons.io.FilenameUtils;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 /*@MappedSuperclass*/
 @Entity
 /*@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)*/
@@ -31,9 +34,11 @@ public class CreatedFile {
 	@Transient
 	private String filename;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Europe/Berlin")
 	protected Date creationTime;
 
-    @ManyToOne
+	@JsonBackReference
+	@ManyToOne
 	protected VideoConversion videoConversion;
 	
 	/**
@@ -43,6 +48,20 @@ public class CreatedFile {
 	@PrePersist
 	protected void onCreate() {
 		creationTime = new Date();
+	}
+
+	/**
+	 * @return the id
+	 */
+	public Long getId() {
+		return id;
+	}
+
+	/**
+	 * @param id the id to set
+	 */
+	public void setId(Long id) {
+		this.id = id;
 	}
 	
 	/**
