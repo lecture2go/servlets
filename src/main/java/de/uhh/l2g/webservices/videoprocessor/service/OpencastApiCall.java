@@ -26,7 +26,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
-import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
@@ -37,6 +36,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.uhh.l2g.webservices.videoprocessor.model.opencast.Publication;
 import de.uhh.l2g.webservices.videoprocessor.model.opencast.Video;
+import de.uhh.l2g.webservices.videoprocessor.util.Config;
 
 
 
@@ -46,6 +46,9 @@ import de.uhh.l2g.webservices.videoprocessor.model.opencast.Video;
 public class OpencastApiCall {
 	
 	public static String eventEndpoint = "events";
+	
+	// the application configuration
+	private static Config config = Config.getInstance();
 
 	/**
 	 * Sends a post request to the opencast API events endpoint.
@@ -198,8 +201,7 @@ public class OpencastApiCall {
 	 * @return a web target to connect to
 	 */
 	private static WebTarget prepareApiCall(String endpoint) {
-		// TODO: change hardcoded to properties
-		String url = "http://opencast1.rrz.uni-hamburg.de:8080/api/";
+		String url = config.getProperty("opencast.url.api");
 		
 		WebTarget target = prepareOcCall(url);
 		return target.path(endpoint);
@@ -212,10 +214,9 @@ public class OpencastApiCall {
 	 * @return a WebTarget object which will be used for the connection
 	 */
 	private static WebTarget prepareOcCall(String url) {
-		// TODO: change hardcoded to properties
-		String user = "admin";
-		String password = "opencast";
-		
+		String user 	= config.getProperty("opencast.user");
+		String password = config.getProperty("opencast.pass");
+
 		// authentication
 		HttpAuthenticationFeature authentication = HttpAuthenticationFeature.basic(user,password);
 		
@@ -241,11 +242,11 @@ public class OpencastApiCall {
 		// default acl
 		Map<String,String> acl1 = new HashMap<String,String>();
 		acl1.put("action", "write");
-		acl1.put("role", "ROLE_ADMIN");
+		acl1.put("role", config.getProperty("opencast.conversion.acl.write"));
 		
 		Map<String,String> acl2 = new HashMap<String,String>();
 		acl2.put("action", "read");
-		acl2.put("role", "ROLE_USER");
+		acl2.put("role", config.getProperty("opencast.conversion.acl.read"));
 		
 		acl.add(acl1);
 		acl.add(acl2);
@@ -267,9 +268,8 @@ public class OpencastApiCall {
 	 * @return the processing info as as json string
 	 */
 	private static String createProcessingJson(Long id) {
-		// TODO: do not use hardcoded values (properties?)
 		Map<String, Object> processing = new HashMap<String,Object>();
-		processing.put("workflow","l2go-adaptive-publish");
+		processing.put("workflow", Config.getInstance().getProperty("opencast.conversion.workflow"));
 		Map<String, String> configuration = new HashMap<String,String>();
 		configuration.put("sourceId",id.toString());
 		processing.put("configuration",configuration);
