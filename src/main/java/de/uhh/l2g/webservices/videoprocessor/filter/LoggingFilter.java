@@ -30,11 +30,9 @@ public class LoggingFilter implements ContainerRequestFilter {
 	
 	@Override
 	public void filter(ContainerRequestContext requestContext) throws IOException {
-		System.out.println("filter");
 		String method = requestContext.getMethod();
 		String path = requestContext.getUriInfo().getPath();
-		String entity = "";
-		//String entity = IOUtils.toString(requestContext.getEntityStream(), StandardCharsets.UTF_8.name());
+		String entity = IOUtils.toString(requestContext.getEntityStream(), StandardCharsets.UTF_8.name());
 		
 		logger.info("HTTP Request: {} {} | Entity: {}", method, path, entity);
 		
