@@ -17,9 +17,11 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import de.uhh.l2g.webservices.videoprocessor.dao.GenericDao;
+import de.uhh.l2g.webservices.videoprocessor.filter.LoggingFilter.Logged;
 import de.uhh.l2g.webservices.videoprocessor.model.VideoConversion;
 import de.uhh.l2g.webservices.videoprocessor.service.VideoConversionService;
 
+@Logged
 @Path("videoconversion")
 public class VideoConversionsResource {
 	
