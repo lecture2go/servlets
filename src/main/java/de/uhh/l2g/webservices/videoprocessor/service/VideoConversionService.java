@@ -211,7 +211,6 @@ public class VideoConversionService {
 					FileHandler.deleteIfExists(createdFile.getFilePath());
 				} catch (Exception e) {
 					persistVideoConversionStatus(VideoConversionStatus.ERROR_DELETING);
-					// TODO: log
 					e.printStackTrace();
 					return false;
 				}

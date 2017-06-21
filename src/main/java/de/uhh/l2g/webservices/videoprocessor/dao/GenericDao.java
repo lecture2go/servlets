@@ -22,7 +22,6 @@ public class GenericDao {
 		
 	public static GenericDao getInstance() {
 		if (instance == null) {
-			System.out.println("no instance - create one");
 			instance = new GenericDao();
 			emf = Persistence.createEntityManagerFactory("videoprocessor");
 		}
