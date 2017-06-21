@@ -45,7 +45,7 @@ public class VideoConversionsResource {
 
 		VideoConversionService vc = new VideoConversionService(videoConversion);
 		VideoConversion videoConversionDb = vc.runVideoConversion();
-		if (videoConversion == null) {
+		if (videoConversionDb == null) {
 			throw new InternalServerErrorException();
 		} 
         URI uri = uriInfo.getAbsolutePathBuilder().path(videoConversionDb.getSourceId().toString()).build();
