@@ -42,7 +42,10 @@ public class GenericDao {
 	}
 	
 	public <T> T get(Class<T> type, Long id) {
-		return getEntityManager().find(type, id);
+		EntityManager em = getEntityManager();
+		T entity = em.find(type, id);
+		em.close();
+		return entity;
 	}
 	
 	public <T> List<T> getAll(Class<T> type) {
@@ -51,7 +54,9 @@ public class GenericDao {
 		CriteriaBuilder builder = em.getCriteriaBuilder();
 		CriteriaQuery<T> criteriaQuery = builder.createQuery(type);
 		TypedQuery<T> allQuery = em.createQuery(criteriaQuery);
-		return allQuery.getResultList();
+		List<T> entities = allQuery.getResultList();
+		em.close();
+		return entities;
 		
 		
 		/*
