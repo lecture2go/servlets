@@ -8,6 +8,7 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -23,6 +24,7 @@ import javax.persistence.TemporalType;
 import org.apache.commons.io.FilenameUtils;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 
@@ -55,7 +57,8 @@ public class VideoConversion {
 
 	private String elapsedTime;
 	
-	@OneToMany(mappedBy = "videoConversion", cascade={CascadeType.ALL})
+	
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "videoConversion", cascade={CascadeType.ALL})
 	@JsonManagedReference
 	private List<CreatedFile> createdFiles;
 	

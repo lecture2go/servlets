@@ -10,6 +10,8 @@ import javax.persistence.Transient;
 
 import org.apache.commons.io.FilenameUtils;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 public class CreatedVideo extends CreatedFile {
 
@@ -24,6 +26,7 @@ public class CreatedVideo extends CreatedFile {
 	private int bitrate;
 	
 	@Transient
+	@JsonIgnore
 	private String remotePath;
 
 	/**
