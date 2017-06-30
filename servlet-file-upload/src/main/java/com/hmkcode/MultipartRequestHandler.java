@@ -24,7 +24,7 @@ import de.uhh.l2g.util.SyntaxManager;
 
 public class MultipartRequestHandler {
 
-	private static final Long MAX_SIZE = new Long("2147483648");
+	private static final Long MAX_SIZE = new Long("5368709120");
 
 	public static List<FileMeta> uploadByJavaServletAPI(HttpServletRequest request) throws IOException, ServletException{
 		
