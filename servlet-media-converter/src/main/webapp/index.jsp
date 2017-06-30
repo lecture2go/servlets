@@ -7,6 +7,6 @@
 <title>Lecture2Go Servlets</title>
 </head>
 <body>
-Lecture2Go Download Servlet
+Lecture2Go Media Converter
 </body>
 </html>

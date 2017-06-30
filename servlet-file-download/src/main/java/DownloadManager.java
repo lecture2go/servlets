@@ -31,7 +31,7 @@ public class DownloadManager extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	@SuppressWarnings("unused")
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String downloadPath = repositoryRoot+request.getParameter("downloadPath");
 		String downloadAllowed = request.getParameter("downloadAllowed");
 		String dsn = request.getServerName();

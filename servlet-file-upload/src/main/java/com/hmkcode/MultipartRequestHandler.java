@@ -73,7 +73,6 @@ public class MultipartRequestHandler {
 			factory.setSizeThreshold(0);//save all to disk
 			ServletFileUpload upload = new ServletFileUpload(factory);
 			upload.setSizeMax(MAX_SIZE);//max file size 2 TB
-
 			// 2.2 Parse the request
 			try {
 				// 2.3 Get all uploaded FileItem
