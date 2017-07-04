@@ -49,6 +49,9 @@ public class OpencastApiCall {
 	
 	// the application configuration
 	private static Config config = Config.getInstance();
+	private static String user = config.getProperty("opencast.user");
+	private static String password = config.getProperty("opencast.pass");
+
 
 	/**
 	 * Sends a post request to the opencast API events endpoint.
@@ -214,8 +217,6 @@ public class OpencastApiCall {
 	 * @return a WebTarget object which will be used for the connection
 	 */
 	private static WebTarget prepareOcCall(String url) {
-		String user 	= config.getProperty("opencast.user");
-		String password = config.getProperty("opencast.pass");
 
 		// authentication
 		HttpAuthenticationFeature authentication = HttpAuthenticationFeature.basic(user,password);

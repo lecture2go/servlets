@@ -108,20 +108,32 @@ public class VideoConversionService {
 			
 			// get the event details and map them to createdVideo objects
 			List<Video> videos = OpencastApiCall.getVideos(videoConversion.getOpencastId());
+			if (videos.isEmpty()) {
+				persistVideoConversionStatus(VideoConversionStatus.ERROR_RETRIEVING_VIDEO_METADATA_FROM_OC);
+				return;
+			}
 			List<CreatedVideo> createdVideos = mapMediaToCreatedVideos(videos);
 			
 			for(CreatedVideo createdVideo: createdVideos) {
 				// download to a temporary filename
 				downloadVideo(createdVideo);
-				// update the videoConversion object to retrieve possible filename changes while downloading
-				videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getSourceId());
+				GenericDao.getInstance().update(createdVideo);
+			}
+						
+			// reload the videoConversion object to retrieve possible filename changes while downloading
+			videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getSourceId());
+			// reload the createdVideos list
+			createdVideos = videoConversion.getCreatedVideos();
+			for(CreatedVideo createdVideo: createdVideos) {
 				// rename the video file
 				renameVideo(createdVideo);
+				GenericDao.getInstance().update(createdVideo);
 			}
 		
 			// build SMIL file
 			buildSmil(createdVideos);
 			
+			/*
 			// delete event (and files) in opencast
 			try {
 				OpencastApiCall.deleteEvent(videoConversion.getOpencastId());
@@ -129,6 +141,7 @@ public class VideoConversionService {
 				persistVideoConversionStatus(VideoConversionStatus.ERROR_DELETING_FROM_OC);
 				return;
 			}
+			*/
 	
 			// the process is finished
 			persistVideoConversionStatus(VideoConversionStatus.FINISHED);
@@ -147,8 +160,33 @@ public class VideoConversionService {
 		}
 	}
 	
+	private void downloadVideos() {
+		videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getSourceId());
+		List<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
+		
+		for (CreatedFile createdFile: createdFiles) {
+			if (createdFile instanceof CreatedVideo) {
+				downloadVideo((CreatedVideo) createdFile);
+			}
+		}
+	}
+	
+	private void renameVideos() {
+		// reload the videoConversion object to retrieve possible filename changes before downloading
+		videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getSourceId());
+		List<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
+		
+		for (CreatedFile createdFile: createdFiles) {
+			if (createdFile instanceof CreatedVideo) {
+				renameVideo((CreatedVideo) createdFile);
+			}
+		}
+	}
+
 	/**
-	 * Renames all created files to the new filename
+	 * Renames the file
+	 * If the rename happens before any files are created, it will only be set in the database, so the current name can be fetched after downloading
+	 * If there are created files, they will be renamed.
 	 * @param filename
 	 */
 	public boolean renameFiles(String filename) {
@@ -163,20 +201,23 @@ public class VideoConversionService {
 		// persist the new filename to the database for the given videoConversion id
 		videoConversion.setSourceFilename(filename);
 		GenericDao.getInstance().update(videoConversion);
+		//videoConversion.getCreatedVideos();
 
 		// if there already exist files for the videoConversion we need to rename them
 		List<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
-		if (createdFiles != null) {
+		if (!createdFiles.isEmpty()) {
 			for (CreatedFile createdFile: createdFiles) {
 				String oldFilePath = createdFile.getFilePath();
 				String newFilename = createdFile.getFilename().replace(oldBaseFilename, newBaseFilename);
-
+				
 				createdFile.setFilename(newFilename);
 				GenericDao.getInstance().update(createdFile);
 				String newFilePath = createdFile.getFilePath();
 				try {
-					// delete the old file if somehow existing
-					FileHandler.deleteIfExists(newFilePath);
+					// delete the old file if somehow existing (and oldfilename differs from newfilename)
+					if (newFilePath != oldFilePath) {
+						FileHandler.deleteIfExists(newFilePath);
+					}
 					FileHandler.rename(oldFilePath, newFilePath);
 					persistVideoConversionStatus(VideoConversionStatus.RENAMED);
 				} catch (IOException e) {
@@ -185,6 +226,8 @@ public class VideoConversionService {
 					return false;
 				}
 			}
+			// build SMIL file with renamed files
+			buildSmil();
 		}
 		return true;
 	}
@@ -219,6 +262,19 @@ public class VideoConversionService {
 		return true;
 	}
 	
+	/**
+	 * Builds SMIL file for adaptive streaming
+	 */
+	private void buildSmil() {
+		List<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
+		List<CreatedVideo> createdVideos = new ArrayList<CreatedVideo>();
+		for (CreatedFile createdFile: createdFiles) {
+			if (createdFile instanceof CreatedVideo) {
+				createdVideos.add((CreatedVideo) createdFile);
+			}
+		}
+		buildSmil(createdVideos);
+	}
 
 	/**
 	 * Builds SMIL file for adaptive streaming
@@ -307,6 +363,9 @@ public class VideoConversionService {
 			createdVideo.setHeight(video.getStreams().getVideo1().getFrameheight().intValue());
 			createdVideo.setRemotePath(video.getUri());
 			
+			// persist created video
+			GenericDao.getInstance().save(createdVideo);
+			
 			// add video to list of videos
 			createdVideos.add(createdVideo);
 		}
@@ -340,7 +399,7 @@ public class VideoConversionService {
 	 * This downloads a video from opencast to a temporary filename
 	 * @param createdVideo the createdVideo which will be downloaded
 	 */
-	private void downloadVideo(CreatedVideo createdVideo) {
+	private CreatedVideo downloadVideo(CreatedVideo createdVideo) {
 		String sourceFilePath = videoConversion.getSourceFilePath();
 
 		persistVideoConversionStatus(VideoConversionStatus.COPYING_FROM_OC);
@@ -351,13 +410,14 @@ public class VideoConversionService {
 			OpencastApiCall.downloadFile(createdVideo.getRemotePath(), targetFilePath);
 		} catch (IOException e) {
 			persistVideoConversionStatus(VideoConversionStatus.ERROR_COPYING_FROM_OC);
-			return;
+			return null;
 		}
 		
 		createdVideo.setFilePath(targetFilePath);
 		
 		// persist the created video to database
-		GenericDao.getInstance().save(createdVideo);
+		//GenericDao.getInstance().update(createdVideo);
+		return createdVideo;
 	}
 	
 	
@@ -365,11 +425,11 @@ public class VideoConversionService {
 	 * Renames the video 
 	 * @param createdVideo
 	 */
-	private void renameVideo(CreatedVideo createdVideo) {
-		logger.info("Renaming Video for videoConversion with sourceId {} to {} (path: {})", videoConversion.getSourceId(), createdVideo.getFilename(), createdVideo.getFilePath());
+	private CreatedVideo renameVideo(CreatedVideo createdVideo) {
 		// rename the file with an added width, example "originalname_1920.mp4"
 		String filePath = FilenameHandler.addToBasename(videoConversion.getSourceFilePath(), "_" + createdVideo.getWidth());
-		
+		logger.info("Renaming Video for videoConversion with sourceId {} to {} (path: {})", videoConversion.getSourceId(), createdVideo.getFilename(), createdVideo.getFilePath());
+
 		// rename
 		persistVideoConversionStatus(VideoConversionStatus.RENAMING);
 		
@@ -381,9 +441,12 @@ public class VideoConversionService {
 			persistVideoConversionStatus(VideoConversionStatus.ERROR_RENAMING);
 
 			e.printStackTrace();
-			return;
+			return null;
 		}
 		createdVideo.setFilePath(filePath);
-		GenericDao.getInstance().update(createdVideo);
+		
+		return createdVideo;
+		//CreatedVideo v = GenericDao.getInstance().update(createdVideo);
+		
 	}
 }

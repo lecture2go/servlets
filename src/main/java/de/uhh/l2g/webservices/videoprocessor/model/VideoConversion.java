@@ -1,5 +1,6 @@
 package de.uhh.l2g.webservices.videoprocessor.model;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -215,5 +216,21 @@ public class VideoConversion {
 	 */
 	public void setCreatedFiles(List<CreatedFile> createdFiles) {
 		this.createdFiles = createdFiles;
+	}
+
+	/**
+	 * @return the createdVideos
+	 */
+	@JsonIgnore
+	public List<CreatedVideo> getCreatedVideos() {
+		List<CreatedVideo> createdVideos = new ArrayList<CreatedVideo>();
+		List<CreatedFile> createdFiles = getCreatedFiles();
+		for (CreatedFile createdFile: createdFiles) {
+			if (createdFile instanceof CreatedVideo) {
+				System.out.println("createdVideo existing");
+				createdVideos.add((CreatedVideo) createdFile);
+			}
+		}
+		return createdVideos;
 	}
 }
