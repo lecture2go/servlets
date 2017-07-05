@@ -10,6 +10,7 @@ import javax.persistence.PersistenceUnit;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 
 import de.uhh.l2g.webservices.videoprocessor.model.VideoConversion;
 
@@ -53,7 +54,9 @@ public class GenericDao {
 		EntityManager em = getEntityManager();
 		CriteriaBuilder builder = em.getCriteriaBuilder();
 		CriteriaQuery<T> criteriaQuery = builder.createQuery(type);
-		TypedQuery<T> allQuery = em.createQuery(criteriaQuery);
+		Root<T> rootEntry = criteriaQuery.from(type);
+        CriteriaQuery<T> all = criteriaQuery.select(rootEntry);
+		TypedQuery<T> allQuery = em.createQuery(all);
 		List<T> entities = allQuery.getResultList();
 		em.close();
 		return entities;

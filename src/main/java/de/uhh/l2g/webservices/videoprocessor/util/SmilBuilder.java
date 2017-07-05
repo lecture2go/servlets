@@ -54,7 +54,7 @@ public class SmilBuilder {
 		
 		// video elements
 		for (CreatedVideo video: videos) {
-			Element videoElement = doc.createElement("switch");
+			Element videoElement = doc.createElement("video");
 			videoElement.setAttribute("src", video.getFilename());
 			videoElement.setAttribute("height", String.valueOf(video.getHeight()));
 			videoElement.setAttribute("width", String.valueOf(video.getWidth()));
