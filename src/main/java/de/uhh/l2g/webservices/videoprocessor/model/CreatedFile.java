@@ -19,9 +19,10 @@ import org.apache.commons.io.FilenameUtils;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
-/*@MappedSuperclass*/
+/**
+ * The CreatedFile model describes files which where created in the file system via the videoConversion
+ */
 @Entity
-/*@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)*/
 public class CreatedFile {
 
 	@Id
@@ -79,6 +80,7 @@ public class CreatedFile {
 	}
 	
 	/**
+	 * Only return the filename of the filepath
 	 * @return the filename
 	 */
 	public String getFilename() {
@@ -86,6 +88,7 @@ public class CreatedFile {
 	}
 
 	/**
+	 * Setting the filename will reset the filepath with the new filename
 	 * @param filename the sourceFileName to set
 	 */
 	public void setFilename(String filename) {

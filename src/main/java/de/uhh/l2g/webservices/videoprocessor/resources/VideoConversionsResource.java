@@ -21,15 +21,32 @@ import de.uhh.l2g.webservices.videoprocessor.filter.LoggingFilter.Logged;
 import de.uhh.l2g.webservices.videoprocessor.model.VideoConversion;
 import de.uhh.l2g.webservices.videoprocessor.service.VideoConversionService;
 
+/**
+ *  A list of videoconversions as a resource
+ *
+ *  Allowed methods: GET, POST
+ *  All requests to this resource will be logged
+ */
 @Logged
 @Path("videoconversion")
 public class VideoConversionsResource {
 	
+    /**
+     * Delegates calls to a specific id to the VideoConversionResource class
+     *
+     * @param id the specific videoConversion
+     * @return the single videoConversion resource
+     */
 	@Path("{id}")
 	public VideoConversionResource getVideoConversion(@PathParam("id") Long id) {
 		return new VideoConversionResource(id);
 	}
 	
+    /**
+     * Returns a list of video conversions as JSON
+     *
+     * @return a list of videoconversions, or a NOT FOUND status code when no videoconversions existing
+     */
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<VideoConversion> getVideoConversions() {
@@ -41,6 +58,13 @@ public class VideoConversionsResource {
 		return videoConversions;
 	}
 	
+    /**
+     * Starts a new video conversion
+     *
+     * @param videoConversion the new videoConversion
+     * @param uriInfo the URI of the request
+     * @return a response with the new URI of the resource
+     */
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response postVideoConversions(VideoConversion videoConversion, @Context UriInfo uriInfo) {

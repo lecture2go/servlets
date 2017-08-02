@@ -12,6 +12,10 @@ import org.apache.commons.io.FilenameUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+/**
+ * The CreatedVideo model describes videos which where created in the file system via the videoConversion
+ * It inherits from the CreatedFile model and adds video-specific properties
+ */
 @Entity
 public class CreatedVideo extends CreatedFile {
 
@@ -25,6 +29,7 @@ public class CreatedVideo extends CreatedFile {
 
 	private int bitrate;
 	
+	// the remote path is temporarily used and will not be persisted
 	@Transient
 	@JsonIgnore
 	private String remotePath;

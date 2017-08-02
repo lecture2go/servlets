@@ -7,7 +7,7 @@ import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 
 /**
- * This class is necessary to allow Cross-Origin Resource Sharing
+ * This response filter is necessary to allow Cross-Origin Resource Sharing
  */
 @Provider
 public class CORSResponseFilter implements ContainerResponseFilter {

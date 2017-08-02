@@ -21,8 +21,19 @@ import org.w3c.dom.Element;
 
 import de.uhh.l2g.webservices.videoprocessor.model.CreatedVideo;
 
+/**
+ * Builds a SMIL (XML) file for adaptive Streaming
+ */
 public class SmilBuilder {
-	// starting XML DOM
+	
+
+	/**
+	 * Builds a SMIL (xml) file for adaptive Streaming
+	 * @param filePath the file path where the SMIL file will be created
+	 * @param videos the videos which will be listed in the file for adaptive streaming
+	 * @throws ParserConfigurationException
+	 * @throws TransformerException
+	 */
 	public static void buildSmil(String filePath, List<CreatedVideo> videos) throws ParserConfigurationException, TransformerException {
 		// sort the video list with width descending for a better organization of the smil file (with an anonymous class)
 		Collections.sort(videos, new Comparator<CreatedVideo>() {
@@ -85,6 +96,13 @@ public class SmilBuilder {
 		transformer.transform(source, result);
 	}
 
+	/**
+	 * Creates a param element of the xml file
+	 * @param name the name property
+	 * @param bitrate the bitrate property
+	 * @param doc the document in which the param will be created
+	 * @return the xml param element
+	 */
 	private static Element createParam(String name, int bitrate, Document doc) {
 		Element paramElement = doc.createElement("param");
 		paramElement.setAttribute("name", name);

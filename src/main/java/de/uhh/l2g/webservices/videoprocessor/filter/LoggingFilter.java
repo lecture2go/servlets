@@ -23,6 +23,9 @@ import java.nio.charset.StandardCharsets;
 
 import de.uhh.l2g.webservices.videoprocessor.filter.LoggingFilter.Logged;
 
+/**
+ * This request filter logs all requests if the annotation @Logged is added to the resource class
+ */
 @Logged
 @Provider
 public class LoggingFilter implements ContainerRequestFilter {
@@ -35,7 +38,6 @@ public class LoggingFilter implements ContainerRequestFilter {
 
 	@Override
 	public void filter(ContainerRequestContext requestContext) throws IOException {
-		//ContainerRequest request = (ContainerRequest) requestContext;
 		String method = requestContext.getMethod();
 		String path = requestContext.getUriInfo().getPath();
 		logger.info("HTTP Request: {} {}",method, path);
@@ -49,11 +51,7 @@ public class LoggingFilter implements ContainerRequestFilter {
         		logger.info("Entity: {}", entity);
 
             }
-        }
-		
-		
-		//String entity = IOUtils.toString(requestContext.getEntityStream(), StandardCharsets.UTF_8.name());
-		
+        }		
 	}
 	
 }

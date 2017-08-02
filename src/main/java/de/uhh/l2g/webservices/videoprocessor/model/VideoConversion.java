@@ -29,10 +29,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 
+/**
+ * The VideoConversion model describes a conversion of a video
+ * This will be persisted
+ */
 @Entity
 @Table(name = "videoconversion")
 public class VideoConversion {
 
+	/* no autoincrement id is used anymore, instead the sourceId is used as the identifier */
 	//@Id
 	//@GeneratedValue(strategy = GenerationType.IDENTITY)
 	//@Column(name = "id", updatable = false, nullable = false)
@@ -63,8 +68,6 @@ public class VideoConversion {
 	@JsonManagedReference
 	private List<CreatedFile> createdFiles;
 	
-	//private CreatedFile[] createdFiles;
-
 	/**
 	 * Sets the startTime to the current date
 	 * This method is called when a videoConversion object is about to be persisted to the database
@@ -219,6 +222,8 @@ public class VideoConversion {
 	}
 
 	/**
+	 * Gets the list of createdVideos from the createdFiles 
+	 * (this seems necessary due to inheritance of createdVideo and the used persisting in one table -> but maybe there is a better way?!)
 	 * @return the createdVideos
 	 */
 	@JsonIgnore
@@ -227,7 +232,6 @@ public class VideoConversion {
 		List<CreatedFile> createdFiles = getCreatedFiles();
 		for (CreatedFile createdFile: createdFiles) {
 			if (createdFile instanceof CreatedVideo) {
-				System.out.println("createdVideo existing");
 				createdVideos.add((CreatedVideo) createdFile);
 			}
 		}

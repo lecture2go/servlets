@@ -1,5 +1,9 @@
 package de.uhh.l2g.webservices.videoprocessor.model;
 
+/**
+ * An Enumeration of possible statuses of the videoconversion 
+ *
+ */
 public enum VideoConversionStatus {
 	COPYING_TO_OC, 
 	OC_RUNNING,

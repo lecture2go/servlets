@@ -22,6 +22,12 @@ import de.uhh.l2g.webservices.videoprocessor.filter.LoggingFilter.Logged;
 import de.uhh.l2g.webservices.videoprocessor.model.VideoConversion;
 import de.uhh.l2g.webservices.videoprocessor.service.VideoConversionService;
 
+/**
+ * A videoConversion as a resource
+ *
+ * Allowed methods: GET, PUT, DELETE
+ * All requests to this resource will be logged
+ */
 @Logged
 public class VideoConversionResource {
 	private Long id;
@@ -30,6 +36,11 @@ public class VideoConversionResource {
 		this.id = id;
 	}
 	
+    /**
+     * Returns a videoConversion as JSON
+     *
+     * @return the videoConversion with the given id, or a NOT FOUND status code if videoConversion not exists
+     */
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public VideoConversion getVideoConversion() {
@@ -42,7 +53,12 @@ public class VideoConversionResource {
 	}
 	
 
-	
+    /**
+     * Renames the files of an existing videoConversion
+     *
+     * @param filenameMap a simple key value pair with a "sourceFileName" as key and the necessary value
+     * @return a 200 ok response if successful, or a NOT FOUND status code if resource not existing or renaming 
+     */
 	@Path("filename")
 	@PUT
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -57,6 +73,13 @@ public class VideoConversionResource {
 		}
 	}
 	
+    /**
+     * Passes a success or failure message to the videoConversion
+     * This this used for notify this webservice if the video conversion was successful or not
+     *
+     * @param filenameMap a simple key value pair with a "sourceFileName" as key and the necessary value
+     * @return a 200 ok response if successful, or a NOT FOUND status code if resource not existing or renaming 
+     */
 	@PUT
 	@Consumes({MediaType.APPLICATION_FORM_URLENCODED})
 	public void putVideoConversionFormData(@FormParam("message") Boolean success) {
@@ -65,11 +88,12 @@ public class VideoConversionResource {
 		vc.handleOpencastResponse(success);
 	}
 	
-	
-	
+    /**
+     * Deletes a videoConversion
+     *
+     * @return a response with a status code 200 (ok), or a NOT FOUND status code via the ExceptionMapper
+     */
 	@DELETE
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
 	public Response deleteVideoConversion() {
 		VideoConversion videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
 		VideoConversionService vc = new VideoConversionService(videoConversion);
