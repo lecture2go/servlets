@@ -205,29 +205,41 @@ public class VideoConversionService {
 
 		// if there already exist files for the videoConversion we need to rename them
 		List<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
-		if (!createdFiles.isEmpty()) {
+		if (!createdFiles.isEmpty()) {			
 			for (CreatedFile createdFile: createdFiles) {
-				String oldFilePath = createdFile.getFilePath();
-				String newFilename = createdFile.getFilename().replace(oldBaseFilename, newBaseFilename);
-				
-				createdFile.setFilename(newFilename);
-				GenericDao.getInstance().update(createdFile);
-				String newFilePath = createdFile.getFilePath();
-				try {
-					// delete the old file if somehow existing (and oldfilename differs from newfilename)
-					if (newFilePath != oldFilePath) {
-						FileHandler.deleteIfExists(newFilePath);
+				// the old SMIL file will be deleted as it is now outdated
+				if (createdFile.getFilename().toLowerCase().endsWith("smil")) {
+					logger.info("Delete old SMIL file for videoConversion with sourceId {} and id of createdFile {}", videoConversion.getSourceId(), createdFile.getId());
+					// delete file
+					FileHandler.deleteIfExists(createdFile.getFilePath());
+					// delete from database
+					GenericDao.getInstance().deleteById(CreatedFile.class, createdFile.getId());
+					// reload owning videoConversion class after delete
+					videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getSourceId());
+				} else {
+					String oldFilePath = createdFile.getFilePath();
+					String newFilename = createdFile.getFilename().replace(oldBaseFilename, newBaseFilename);
+					
+					createdFile.setFilename(newFilename);
+					GenericDao.getInstance().update(createdFile);
+					String newFilePath = createdFile.getFilePath();
+					try {
+						// delete the old file if somehow existing (and oldfilename differs from newfilename)
+						if (newFilePath != oldFilePath) {
+							FileHandler.deleteIfExists(newFilePath);
+						}
+						FileHandler.rename(oldFilePath, newFilePath);
+						persistVideoConversionStatus(VideoConversionStatus.RENAMED);
+					} catch (IOException e) {
+						persistVideoConversionStatus(VideoConversionStatus.ERROR_RENAMING);
+						// if one file can not be renamed, stop the renaming process 
+						return false;
 					}
-					FileHandler.rename(oldFilePath, newFilePath);
-					persistVideoConversionStatus(VideoConversionStatus.RENAMED);
-				} catch (IOException e) {
-					persistVideoConversionStatus(VideoConversionStatus.ERROR_RENAMING);
-					// if one file can not be renamed, stop the renaming process 
-					return false;
 				}
 			}
 			// build SMIL file with renamed files
 			buildSmil();
+			persistVideoConversionStatus(VideoConversionStatus.FINISHED);
 		}
 		return true;
 	}
@@ -239,7 +251,16 @@ public class VideoConversionService {
 	 */
 	public boolean delete() {
 		logger.info("Delete Everything for videoConversion with sourceId {}", videoConversion.getSourceId());
-		return cleanup();	
+		// delete event (and files) in opencast
+		try {
+			OpencastApiCall.deleteEvent(videoConversion.getOpencastId());
+		}
+		catch(NotFoundException e) {
+			// this simply means there is no event at opencast, this is default after a video encoding process is finished
+		} catch(WebApplicationException e) {
+			persistVideoConversionStatus(VideoConversionStatus.ERROR_DELETING_FROM_OC);
+		} 
+		return cleanup();
 	}
 
 	/**
