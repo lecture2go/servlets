@@ -77,7 +77,7 @@ public class VideoConversionResource {
      * Passes a success or failure message to the videoConversion
      * This this used for notify this webservice if the video conversion was successful or not
      *
-     * @param filenameMap a simple key value pair with a "sourceFileName" as key and the necessary value
+     * @param success boolean variable if the process was successful or not
      * @return a 200 ok response if successful, or a NOT FOUND status code if resource not existing or renaming 
      */
 	@PUT

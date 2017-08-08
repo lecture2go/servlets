@@ -63,8 +63,8 @@ public class VideoConversion {
 
 	private String elapsedTime;
 	
-	
-	@OneToMany(fetch = FetchType.EAGER, mappedBy = "videoConversion", cascade={CascadeType.ALL})
+	// cascade={CascadeType.ALL}
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "videoConversion", cascade={CascadeType.REMOVE} )
 	@JsonManagedReference
 	private List<CreatedFile> createdFiles;
 	
@@ -217,8 +217,22 @@ public class VideoConversion {
 	/**
 	 * @param createdFiles the createdFiles to set
 	 */
-	public void setCreatedFiles(List<CreatedFile> createdFiles) {
+	/*public void setCreatedFiles(List<CreatedFile> createdFiles) {
 		this.createdFiles = createdFiles;
+	}*/
+	
+	public void addCreatedFiles(List<CreatedFile> createdFiles) {
+	    this.createdFiles.addAll(createdFiles);
+	}
+	
+	public void addCreatedFile(CreatedFile createdFile)
+	{
+	    this.createdFiles.add(createdFile);
+	}
+	
+	public void removeCreatedFile(CreatedFile createdFile)
+	{
+	    this.createdFiles.remove(createdFile);
 	}
 
 	/**

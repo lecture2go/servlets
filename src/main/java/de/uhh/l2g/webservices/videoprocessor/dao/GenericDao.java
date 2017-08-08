@@ -5,14 +5,10 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
-import javax.persistence.PersistenceContext;
-import javax.persistence.PersistenceUnit;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
-
-import de.uhh.l2g.webservices.videoprocessor.model.VideoConversion;
 
 /**
  * This Dao is used for generic/ non-model specific database operations
@@ -102,18 +98,19 @@ public class GenericDao {
 		em.close();
 		return result;
 	}
-		
+	
 	/**
-	 * Deletes a given entity from the databse
+	 * Deletes a given entity from the database
+	 * WARNING: THIS IS UNTESTED
 	 * @param o the object to delete
 	 */
-	public void delete(Object o) {
+	/*public void delete(Object o) {
 		EntityManager em = getEntityManager();
 		em.getTransaction().begin();
 		em.remove(o);
 		em.getTransaction().commit();
 		em.close();
-	}
+	}*/
 	
 	/**
 	 * Deletes a entity from the datbase wit the given id
