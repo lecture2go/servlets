@@ -27,6 +27,7 @@ import de.uhh.l2g.webservices.videoprocessor.model.VideoConversionStatus;
 import de.uhh.l2g.webservices.videoprocessor.model.opencast.Medium;
 import de.uhh.l2g.webservices.videoprocessor.model.opencast.Publication;
 import de.uhh.l2g.webservices.videoprocessor.model.opencast.Video;
+import de.uhh.l2g.webservices.videoprocessor.util.Config;
 import de.uhh.l2g.webservices.videoprocessor.util.FileHandler;
 import de.uhh.l2g.webservices.videoprocessor.util.FilenameHandler;
 import de.uhh.l2g.webservices.videoprocessor.util.SmilBuilder;
@@ -44,17 +45,6 @@ public class VideoConversionService {
 		this.videoConversion = videoConversion;
 	}
 	
-	/**
-	 * Persists a given status of a video conversion
-	 * @param status the status to persist (as given in the VideoConversionStatus enum)
-	 */
-	public void persistVideoConversionStatus(VideoConversionStatus status) {
-		//TODO: this should not be necessary if entity is managed by JPA/Hibernate
-		GenericDao.getInstance().get(VideoConversion.class, videoConversion.getSourceId());
-		videoConversion.setStatus(status);
-		GenericDao.getInstance().update(videoConversion);
-		logger.info("The new status of the videoConversion with source id {} is {}", videoConversion.getSourceId(), status);
-	}
 	
 	/**
 	 * This runs the actual video conversion
@@ -77,11 +67,18 @@ public class VideoConversionService {
 		
 		persistVideoConversionStatus(VideoConversionStatus.COPYING_TO_OC);
 		
+		// if no workflow is given use the default workflow
+		if (videoConversion.getWorkflow() == null) {
+			videoConversion.setWorkflow(Config.getInstance().getProperty("opencast.conversion.workflow"));
+			GenericDao.getInstance().update(videoConversion);
+		}
+		
 		// create a new opencast event via the opencast API
 		try {
-			String opencastId = OpencastApiCall.postNewEventRequest(videoConversion.getSourceFilePath(), videoConversion.getSourceFilename(), videoConversion.getSourceId());
+			String opencastId = OpencastApiCall.postNewEventRequest(videoConversion.getSourceFilePath(), videoConversion.getSourceFilename(), videoConversion.getSourceId(), videoConversion.getWorkflow());
 			videoConversion.setOpencastId(opencastId);
-			persistVideoConversionStatus(VideoConversionStatus.OC_RUNNING);
+			// this status code change count towards the elapsed time
+			persistVideoConversionStatus(VideoConversionStatus.OC_RUNNING, true);
 		} catch(BadRequestException e) {
 			persistVideoConversionStatus(VideoConversionStatus.ERROR_COPYING_TO_OC_BAD_REQUEST);
 			return null;
@@ -109,7 +106,8 @@ public class VideoConversionService {
 			// get the event details and map them to createdVideo objects
 			List<Video> videos = OpencastApiCall.getVideos(videoConversion.getOpencastId());
 			if (videos.isEmpty()) {
-				persistVideoConversionStatus(VideoConversionStatus.ERROR_RETRIEVING_VIDEO_METADATA_FROM_OC);
+				// this status code change count towards the elapsed time
+				persistVideoConversionStatus(VideoConversionStatus.ERROR_RETRIEVING_VIDEO_METADATA_FROM_OC, true);
 				return;
 			}
 			List<CreatedVideo> createdVideos = mapMediaToCreatedVideos(videos);
@@ -132,31 +130,22 @@ public class VideoConversionService {
 		
 			// build SMIL file
 			buildSmil(createdVideos);
-			
-			/*
-			// delete event (and files) in opencast
-			try {
-				OpencastApiCall.deleteEvent(videoConversion.getOpencastId());
-			} catch(Exception e) {
-				persistVideoConversionStatus(VideoConversionStatus.ERROR_DELETING_FROM_OC);
-				return;
-			}
-			*/
 	
 			// the process is finished
-			persistVideoConversionStatus(VideoConversionStatus.FINISHED);
+			// this status code change count towards the elapsed time
+			persistVideoConversionStatus(VideoConversionStatus.FINISHED, true);
 		} else {
 			// the opencast workflow failed
-			persistVideoConversionStatus(VideoConversionStatus.ERROR_OC_FAILED);
-			/*
-			// delete event (and files) in opencast
-			try {
-				OpencastApiCall.deleteEvent(videoConversion.getOpencastId());
-			} catch(Exception e) {
-				persistVideoConversionStatus(VideoConversionStatus.ERROR_DELETING_FROM_OC);
-				return;
-			}
-			*/
+			// this status code change count towards the elapsed time
+			persistVideoConversionStatus(VideoConversionStatus.ERROR_OC_FAILED, true);
+		}
+		
+		// delete event (and files) in opencast
+		try {
+			OpencastApiCall.deleteEvent(videoConversion.getOpencastId());
+		} catch(Exception e) {
+			persistVideoConversionStatus(VideoConversionStatus.ERROR_DELETING_FROM_OC);
+			return;
 		}
 	}
 	
@@ -469,5 +458,28 @@ public class VideoConversionService {
 		return createdVideo;
 		//CreatedVideo v = GenericDao.getInstance().update(createdVideo);
 		
+	}
+	
+	/**
+	 * Persists a given status of a video conversion
+	 * @param status the status to persist (as given in the VideoConversionStatus enum)
+	 */
+	private void persistVideoConversionStatus(VideoConversionStatus status) {
+		persistVideoConversionStatus(status, false);
+	}
+	
+	/**
+	 * Persists a given status of a video conversion and use the current timestamp to calculate the elapsedTime field of the videoconversion
+	 * @param status the status to persist (as given in the VideoConversionStatus enum)
+	 */
+	private void persistVideoConversionStatus(VideoConversionStatus status, boolean hasRelevanceForElapsedTime) {
+		//TODO: this should not be necessary if entity is managed by JPA/Hibernate
+		GenericDao.getInstance().get(VideoConversion.class, videoConversion.getSourceId());
+		videoConversion.setStatus(status);
+		if (hasRelevanceForElapsedTime) {
+			videoConversion.updateElapsedTime();
+		}
+		GenericDao.getInstance().update(videoConversion);
+		logger.info("The new status of the videoConversion with source id {} is {}", videoConversion.getSourceId(), status);
 	}
 }

@@ -58,10 +58,11 @@ public class OpencastApiCall {
 	 * This creates a new event on the opencast system with the given video file
 	 * @param filepath the path of the file which will be converted
 	 * @param title the title which will be used in the opencast system
+	 * @param workflow the opencast workflow to run
 	 * @param sourceid the source id
 	 * @return the response from the opencast API
 	 */
-	static String postNewEventRequest(String filepath, String title, Long sourceId) {
+	static String postNewEventRequest(String filepath, String title, Long sourceId, String workflow) {
 		// prepare the api call
 		WebTarget target = prepareApiCall(eventEndpoint);
 		
@@ -71,7 +72,7 @@ public class OpencastApiCall {
 		// create the parts necessary for the the request
 		String acl = createAclJson();
 		String metadata = createMetadataJson(title, sourceId);
-		String processing = createProcessingJson(sourceId);
+		String processing = createProcessingJson(sourceId, workflow);
 
 		// create the multipart form data
 		FormDataMultiPart multiPart = new FormDataMultiPart();
@@ -266,11 +267,12 @@ public class OpencastApiCall {
 	
 	/**
 	 * Creates an opencast-compatible processing json string (used for a new event request)
+	 * @param workflow 
 	 * @return the processing info as as json string
 	 */
-	private static String createProcessingJson(Long id) {
+	private static String createProcessingJson(Long id, String workflow) {
 		Map<String, Object> processing = new HashMap<String,Object>();
-		processing.put("workflow", Config.getInstance().getProperty("opencast.conversion.workflow"));
+		processing.put("workflow", workflow);
 		Map<String, String> configuration = new HashMap<String,String>();
 		configuration.put("sourceId",id.toString());
 		processing.put("configuration",configuration);

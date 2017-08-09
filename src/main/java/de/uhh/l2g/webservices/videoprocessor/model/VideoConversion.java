@@ -63,6 +63,8 @@ public class VideoConversion {
 
 	private String elapsedTime;
 	
+	private String workflow;
+	
 	// cascade={CascadeType.ALL}
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "videoConversion", cascade={CascadeType.REMOVE} )
 	@JsonManagedReference
@@ -77,12 +79,11 @@ public class VideoConversion {
 		startTime = new Date();
 	}
 	
+	
 	/**
 	 * Sets the elapsed time since the start date in a easily readable string: "hh:mm:ss"
-	 * This method is called when a videoConversion object is about to be updated in the database
 	 */
-	@PreUpdate
-	protected void onUpdate() {
+	public void updateElapsedTime() {
 		Date now = new Date();
 		Long milliSeconds = now.getTime() - startTime.getTime();
 		// see here: http://stackoverflow.com/questions/9027317/how-to-convert-milliseconds-to-hhmmss-format
@@ -206,6 +207,22 @@ public class VideoConversion {
 	public void setElapsedTime(String elapsedTime) {
 		this.elapsedTime = elapsedTime;
 	}
+
+	/**
+	 * @return the workflow
+	 */
+	public String getWorkflow() {
+		return workflow;
+	}
+
+
+	/**
+	 * @param workflow the workflow to set
+	 */
+	public void setWorkflow(String workflow) {
+		this.workflow = workflow;
+	}
+
 
 	/**
 	 * @return the createdFiles
