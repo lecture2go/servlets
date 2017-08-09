@@ -127,9 +127,11 @@ public class VideoConversionService {
 				renameVideo(createdVideo);
 				GenericDao.getInstance().update(createdVideo);
 			}
-		
-			// build SMIL file
-			buildSmil(createdVideos);
+			
+			if (videoConversion.getCreateSmil()) {
+				// build SMIL file
+				buildSmil(createdVideos);
+			}
 	
 			// the process is finished
 			// this status code change count towards the elapsed time
@@ -226,8 +228,11 @@ public class VideoConversionService {
 					}
 				}
 			}
-			// build SMIL file with renamed files
-			buildSmil();
+			
+			if (videoConversion.getCreateSmil()) {
+				// build SMIL file with renamed files
+				buildSmil();
+			}
 			persistVideoConversionStatus(VideoConversionStatus.FINISHED);
 		}
 		return true;

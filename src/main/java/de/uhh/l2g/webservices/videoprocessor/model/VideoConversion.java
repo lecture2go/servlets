@@ -65,6 +65,8 @@ public class VideoConversion {
 	
 	private String workflow;
 	
+	private boolean createSmil = false;
+	
 	// cascade={CascadeType.ALL}
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "videoConversion", cascade={CascadeType.REMOVE} )
 	@JsonManagedReference
@@ -221,6 +223,22 @@ public class VideoConversion {
 	 */
 	public void setWorkflow(String workflow) {
 		this.workflow = workflow;
+	}
+
+
+	/**
+	 * @return the createSmil
+	 */
+	public boolean getCreateSmil() {
+		return createSmil;
+	}
+
+
+	/**
+	 * @param createSmil the createSmil to set
+	 */
+	public void setCreateSmil(boolean createSmil) {
+		this.createSmil = createSmil;
 	}
 
 
