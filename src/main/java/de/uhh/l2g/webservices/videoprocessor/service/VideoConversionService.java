@@ -53,16 +53,15 @@ public class VideoConversionService {
 	public VideoConversion runVideoConversion() {		
 
 		logger.info("A new videoConversion is started for the sourceId {}", videoConversion.getSourceId());
-
-		// save metadata to database (id / path)
 		
-		// there is no autoincrement id, as the source id is used. a new videoconversion process results in the cleanup 
-		// of a current or finished videoconversion with the same id
-		VideoConversion videoConversionDb = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getSourceId());
+		// check if there is a record with the sourceid existing, if so delete the corresponding created files and mark the the record
+		VideoConversion videoConversionDb = GenericDao.getInstance().getFirstByFieldValue(VideoConversion.class, "sourceId", videoConversion.getSourceId());
 		if (videoConversionDb != null) {
 			// delete old files
 			cleanup(videoConversionDb);
 		}
+		
+		// persist a new videoConversion object
 		videoConversion = GenericDao.getInstance().save(videoConversion);
 		
 		persistVideoConversionStatus(VideoConversionStatus.COPYING_TO_OC);
@@ -75,7 +74,7 @@ public class VideoConversionService {
 		
 		// create a new opencast event via the opencast API
 		try {
-			String opencastId = OpencastApiCall.postNewEventRequest(videoConversion.getSourceFilePath(), videoConversion.getSourceFilename(), videoConversion.getSourceId(), videoConversion.getWorkflow());
+			String opencastId = OpencastApiCall.postNewEventRequest(videoConversion.getSourceFilePath(), videoConversion.getSourceFilename(), videoConversion.getId(), videoConversion.getWorkflow());
 			videoConversion.setOpencastId(opencastId);
 			// this status code change count towards the elapsed time
 			persistVideoConversionStatus(VideoConversionStatus.OC_RUNNING, true);
@@ -98,7 +97,7 @@ public class VideoConversionService {
 	 * @param success true if oc has succeeded, false if there was an error
 	 */
 	public void handleOpencastResponse(Boolean success) {
-		logger.info("Opencast has sent a http-notify for videoConversion with sourceId {} with the result: {}", videoConversion.getSourceId(), Boolean.toString(success));
+		logger.info("Opencast has sent a http-notify for videoConversion with id: {} / sourceId: {} with the result: {}", videoConversion.getId(), videoConversion.getSourceId(), Boolean.toString(success));
 		if (success) {
 			// the opencast workflow was successful
 			persistVideoConversionStatus(VideoConversionStatus.OC_SUCCEEDED);
@@ -119,7 +118,7 @@ public class VideoConversionService {
 			}
 						
 			// reload the videoConversion object to retrieve possible filename changes while downloading
-			videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getSourceId());
+			videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getId());
 			// reload the createdVideos list
 			createdVideos = videoConversion.getCreatedVideos();
 			for(CreatedVideo createdVideo: createdVideos) {
@@ -152,7 +151,7 @@ public class VideoConversionService {
 	}
 	
 	private void downloadVideos() {
-		videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getSourceId());
+		videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getId());
 		List<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
 		
 		for (CreatedFile createdFile: createdFiles) {
@@ -164,7 +163,7 @@ public class VideoConversionService {
 	
 	private void renameVideos() {
 		// reload the videoConversion object to retrieve possible filename changes before downloading
-		videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getSourceId());
+		videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getId());
 		List<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
 		
 		for (CreatedFile createdFile: createdFiles) {
@@ -181,7 +180,7 @@ public class VideoConversionService {
 	 * @param filename
 	 */
 	public boolean renameFiles(String filename) {
-		logger.info("Renaming Files for videoConversion with sourceId {} to {}", videoConversion.getSourceId(), filename);
+		logger.info("Renaming Files for videoConversion with id: {} / sourceId: {} to {}", videoConversion.getId(), videoConversion.getSourceId(), filename);
 
 		// this is the old filename without extension, which provides the foundation for the renaming
 		String oldBaseFilename = FilenameUtils.getBaseName(videoConversion.getSourceFilename());
@@ -200,13 +199,13 @@ public class VideoConversionService {
 			for (CreatedFile createdFile: createdFiles) {
 				// the old SMIL file will be deleted as it is now outdated
 				if (createdFile.getFilename().toLowerCase().endsWith("smil")) {
-					logger.info("Delete old SMIL file for videoConversion with sourceId {} and id of createdFile {}", videoConversion.getSourceId(), createdFile.getId());
+					logger.info("Delete old SMIL file for videoConversion with id: {} / sourceId: {} and id of createdFile {}", videoConversion.getId(), videoConversion.getSourceId(), createdFile.getId());
 					// delete file
 					FileHandler.deleteIfExists(createdFile.getFilePath());
 					// delete from database
 					GenericDao.getInstance().deleteById(CreatedFile.class, createdFile.getId());
 					// reload owning videoConversion class after delete
-					videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getSourceId());
+					videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getId());
 				} else {
 					String oldFilePath = createdFile.getFilePath();
 					String newFilename = createdFile.getFilename().replace(oldBaseFilename, newBaseFilename);
@@ -244,7 +243,7 @@ public class VideoConversionService {
 	 * @return 
 	 */
 	public boolean delete() {
-		logger.info("Delete Everything for videoConversion with sourceId {}", videoConversion.getSourceId());
+		logger.info("Delete Everything for videoConversion with id: {} / sourceId: {}", videoConversion.getId(), videoConversion.getSourceId());
 		// delete event (and files) in opencast
 		try {
 			OpencastApiCall.deleteEvent(videoConversion.getOpencastId());
@@ -259,9 +258,10 @@ public class VideoConversionService {
 
 	/**
 	 * Deletes all files in the filesystem for the VideoConversion object
+	 * @param videoConversion 
 	 * @return 
 	 */
-	private boolean fileCleanup() {
+	private boolean fileCleanup(VideoConversion videoConversion) {
 		List<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
 		if (createdFiles != null) {
 			for(CreatedFile createdFile: createdFiles) {
@@ -296,7 +296,7 @@ public class VideoConversionService {
 	 * @param createdVideos
 	 */
 	private void buildSmil(List<CreatedVideo> createdVideos) {
-		logger.info("Build a SMIL file for videoConversion with sourceId {}", videoConversion.getSourceId());
+		logger.info("Build a SMIL file for videoConversion with id: {} / sourceId: {}", videoConversion.getId(), videoConversion.getSourceId());
 		// the SMIL file will be written to the same folder as the created videos
 		String smilFullPath = FilenameUtils.getFullPath(videoConversion.getSourceFilePath());
 		String smilFilename = FilenameUtils.getBaseName(videoConversion.getSourceFilename()) + ".smil";
@@ -337,9 +337,12 @@ public class VideoConversionService {
 	 */
 	private boolean cleanup(VideoConversion videoConversion) {
 		// delete all created files from disk
-		if (fileCleanup()){
-			// delete from database
-			GenericDao.getInstance().deleteById(VideoConversion.class, videoConversion.getSourceId());
+		if (fileCleanup(videoConversion)){
+			// delete all created files for the current videoconversion from database 
+			GenericDao.getInstance().deleteByFieldValue(CreatedFile.class, "videoConversion", videoConversion.getId());
+			// refresh the videoConversion object
+			this.videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getId());
+			persistVideoConversionStatus(VideoConversionStatus.DELETED);
 			return true;
 		} else {
 			return false;
@@ -479,12 +482,12 @@ public class VideoConversionService {
 	 */
 	private void persistVideoConversionStatus(VideoConversionStatus status, boolean hasRelevanceForElapsedTime) {
 		//TODO: this should not be necessary if entity is managed by JPA/Hibernate
-		GenericDao.getInstance().get(VideoConversion.class, videoConversion.getSourceId());
+		GenericDao.getInstance().get(VideoConversion.class, videoConversion.getId());
 		videoConversion.setStatus(status);
 		if (hasRelevanceForElapsedTime) {
 			videoConversion.updateElapsedTime();
 		}
 		GenericDao.getInstance().update(videoConversion);
-		logger.info("The new status of the videoConversion with source id {} is {}", videoConversion.getSourceId(), status);
+		logger.info("The new status of the videoConversion with id: {} / source id: {} is {}", videoConversion.getId(), videoConversion.getSourceId(), status);
 	}
 }

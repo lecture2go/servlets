@@ -37,13 +37,12 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 @Table(name = "videoconversion")
 public class VideoConversion {
 
-	/* no autoincrement id is used anymore, instead the sourceId is used as the identifier */
-	//@Id
-	//@GeneratedValue(strategy = GenerationType.IDENTITY)
-	//@Column(name = "id", updatable = false, nullable = false)
-	//private Long id;
-	
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id", updatable = false, nullable = false)
+	private Long id;
+	
+	//@Id
 	@Column(updatable = false)
 	private Long sourceId;
 
@@ -69,6 +68,7 @@ public class VideoConversion {
 	
 	// cascade={CascadeType.ALL}
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "videoConversion", cascade={CascadeType.REMOVE} )
+	//@OneToMany(fetch = FetchType.EAGER, mappedBy = "videoConversion", orphanRemoval = true)
 	@JsonManagedReference
 	private List<CreatedFile> createdFiles;
 	
@@ -100,16 +100,16 @@ public class VideoConversion {
 	/**
 	 * @return the id
 	 */
-	/*public Long getId() {
+	public Long getId() {
 		return id;
-	}*/
+	}
 
 	/**
 	 * @param id the id to set
 	 */
-	/*public void setId(Long id) {
+	public void setId(Long id) {
 		this.id = id;
-	}*/
+	}
 	
 	/**
 	 * @return the sourceId
@@ -268,6 +268,11 @@ public class VideoConversion {
 	public void removeCreatedFile(CreatedFile createdFile)
 	{
 	    this.createdFiles.remove(createdFile);
+	}
+	
+	public void removeCreatedFiles()
+	{
+	    this.createdFiles.clear();
 	}
 
 	/**

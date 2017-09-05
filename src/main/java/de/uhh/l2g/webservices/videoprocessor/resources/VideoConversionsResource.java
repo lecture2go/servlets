@@ -45,6 +45,18 @@ public class VideoConversionsResource {
 	}
 	
     /**
+     * Delegates calls to a specific source-id to the VideoConversionResourceBySourceId class
+     *
+     * @param sourceId the specific videoConversion via the source id
+     * @return the single videoConversion resource
+     */
+	@Path("sourceid/{id}")
+	public VideoConversionResourceBySourceId getVideoConversionBySourceId(@PathParam("id") Long sourceId) {
+		// the sourceId is used as an identifier
+		return new VideoConversionResourceBySourceId(sourceId);
+	}
+	
+    /**
      * Returns a list of video conversions as JSON
      *
      * @return a list of videoconversions, or a NOT FOUND status code when no videoconversions existing
@@ -76,7 +88,7 @@ public class VideoConversionsResource {
 		if (videoConversionDb == null) {
 			throw new InternalServerErrorException();
 		} 
-        URI uri = uriInfo.getAbsolutePathBuilder().path(videoConversionDb.getSourceId().toString()).build();
+        URI uri = uriInfo.getAbsolutePathBuilder().path(videoConversionDb.getId().toString()).build();
 		return Response.created(uri).build();
 	}
 }

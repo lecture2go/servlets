@@ -65,6 +65,39 @@ public class GenericDao {
 		return entity;
 	}
 	
+	/**
+	 * Gets entities for an entity class if field-value matches
+	 * @param type the class of the entity
+	 * @return a list with all filtered entities
+	 */
+	public <T> List<T> getByFieldValue(Class<T> type, String field, Long value) {
+		EntityManager em = getEntityManager();
+		CriteriaBuilder builder = em.getCriteriaBuilder();
+		CriteriaQuery<T> criteriaQuery = builder.createQuery(type);
+		Root<T> rootEntry = criteriaQuery.from(type);
+        CriteriaQuery<T> all = criteriaQuery.select(rootEntry);
+        all.where(builder.equal(rootEntry.get(field), value));
+		TypedQuery<T> allQuery = em.createQuery(all);
+		List<T> entities = allQuery.getResultList();
+		em.close();
+		return entities;
+	}
+
+	/**
+	 * Gets the first entity of a list if field-value matches
+	 * @param type the class of the entity
+	 * @return the first element of a list of filtered entities
+	 */
+	public <T> T getFirstByFieldValue(Class<T> type, String field, Long value) {
+		// test
+		List<T> entities = getByFieldValue(type, field, value);
+		if (entities.isEmpty()) {
+			return null;
+		} else {
+			return entities.get(0);
+		}
+	}
+	
 	
 	/**
 	 * Gets all entities for an entity class
@@ -122,6 +155,29 @@ public class GenericDao {
 		em.getTransaction().begin();
         T result = em.find(type, id);
 		em.remove(result);
+		em.getTransaction().commit();
+		em.close();
+	}
+	
+	/**
+	 * Delete entities for an entity class if field-value matches
+	 * @param type the class of the entity
+	 * @return a list with all filtered entities
+	 */
+	public <T> void deleteByFieldValue(Class<T> type, String field, Long value) {
+		// needs testing
+		EntityManager em = getEntityManager();
+		em.getTransaction().begin();
+		CriteriaBuilder builder = em.getCriteriaBuilder();
+		CriteriaQuery<T> criteriaQuery = builder.createQuery(type);
+		Root<T> rootEntry = criteriaQuery.from(type);
+        CriteriaQuery<T> all = criteriaQuery.select(rootEntry);
+        all.where(builder.equal(rootEntry.get(field), value));
+		TypedQuery<T> allQuery = em.createQuery(all);
+		List<T> entities = allQuery.getResultList();
+		for(T entity: entities) {
+			em.remove(entity);
+		}
 		em.getTransaction().commit();
 		em.close();
 	}

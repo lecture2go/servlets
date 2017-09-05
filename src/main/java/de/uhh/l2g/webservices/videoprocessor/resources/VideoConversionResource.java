@@ -32,10 +32,15 @@ import de.uhh.l2g.webservices.videoprocessor.service.VideoConversionService;
 @Logged
 @Secured
 public class VideoConversionResource {
-	private Long id;
+	protected Long id;
+	protected VideoConversion videoConversion;
+	
+	public VideoConversionResource() {
+	}
 	
 	public VideoConversionResource(Long id) {
 		this.id = id;
+		videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
 	}
 	
     /**
@@ -46,7 +51,6 @@ public class VideoConversionResource {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public VideoConversion getVideoConversion() {
-		VideoConversion videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
 		if (videoConversion == null) {
 			// the default ExceptionMapper takes care of the correct header status code
             throw new NotFoundException();
@@ -66,7 +70,6 @@ public class VideoConversionResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response postFilenameForVideoConversion(HashMap<String,String> filenameMap) {
-		VideoConversion videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
 		VideoConversionService vc = new VideoConversionService(videoConversion);
 		if (vc.renameFiles(filenameMap.get("sourceFileName"))) {
 			return Response.ok().build();
@@ -85,7 +88,6 @@ public class VideoConversionResource {
 	@PUT
 	@Consumes({MediaType.APPLICATION_FORM_URLENCODED})
 	public void putVideoConversionFormData(@FormParam("message") Boolean success) {
-		VideoConversion videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
 		VideoConversionService vc = new VideoConversionService(videoConversion);
 		vc.handleOpencastResponse(success);
 	}
@@ -97,7 +99,6 @@ public class VideoConversionResource {
      */
 	@DELETE
 	public Response deleteVideoConversion() {
-		VideoConversion videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
 		VideoConversionService vc = new VideoConversionService(videoConversion);
 		if (vc.delete()) {
 			return Response.ok().build();
