@@ -74,7 +74,7 @@ public class VideoConversionService {
 		
 		// create a new opencast event via the opencast API
 		try {
-			String opencastId = OpencastApiCall.postNewEventRequest(videoConversion.getSourceFilePath(), videoConversion.getSourceFilename(), videoConversion.getId(), videoConversion.getWorkflow());
+			String opencastId = OpencastApiCall.postNewEventRequest(videoConversion.getSourceFilePath(), videoConversion.getFilename(), videoConversion.getId(), videoConversion.getWorkflow());
 			videoConversion.setOpencastId(opencastId);
 			// this status code change count towards the elapsed time
 			persistVideoConversionStatus(VideoConversionStatus.OC_RUNNING, true);
@@ -183,13 +183,13 @@ public class VideoConversionService {
 		logger.info("Renaming Files for videoConversion with id: {} / sourceId: {} to {}", videoConversion.getId(), videoConversion.getSourceId(), filename);
 
 		// this is the old filename without extension, which provides the foundation for the renaming
-		String oldBaseFilename = FilenameUtils.getBaseName(videoConversion.getSourceFilename());
+		String oldBaseFilename = FilenameUtils.getBaseName(videoConversion.getFilename());
 		
 		// the new filename without extension
 		String newBaseFilename = FilenameUtils.getBaseName(filename);
 		
 		// persist the new filename to the database for the given videoConversion id
-		videoConversion.setSourceFilename(filename);
+		videoConversion.setFilename(filename);
 		GenericDao.getInstance().update(videoConversion);
 		//videoConversion.getCreatedVideos();
 
@@ -298,8 +298,10 @@ public class VideoConversionService {
 	private void buildSmil(List<CreatedVideo> createdVideos) {
 		logger.info("Build a SMIL file for videoConversion with id: {} / sourceId: {}", videoConversion.getId(), videoConversion.getSourceId());
 		// the SMIL file will be written to the same folder as the created videos
-		String smilFullPath = FilenameUtils.getFullPath(videoConversion.getSourceFilePath());
-		String smilFilename = FilenameUtils.getBaseName(videoConversion.getSourceFilename()) + ".smil";
+		//String smilFullPath = FilenameUtils.getFullPath(videoConversion.getSourceFilePath());
+		String smilFullPath = videoConversion.getTargetDirectory();
+
+		String smilFilename = FilenameUtils.getBaseName(videoConversion.getFilename()) + ".smil";
 		String smilFilePath = FilenameUtils.concat(smilFullPath, smilFilename);
 		// delete smil file is exists
 		try {
@@ -417,13 +419,33 @@ public class VideoConversionService {
 	 * This downloads a video from opencast to a temporary filename
 	 * @param createdVideo the createdVideo which will be downloaded
 	 */
+	/*private CreatedVideo downloadVideo(CreatedVideo createdVideo) {
+		return downloadVideo(createdVideo, null);
+	}*/
+	
+	/**
+	 * This downloads a video from opencast to a temporary filename
+	 * @param createdVideo the createdVideo which will be downloaded
+	 * @param targetDirectory the directory to which the file will be downloaded
+	 */
 	private CreatedVideo downloadVideo(CreatedVideo createdVideo) {
 		String sourceFilePath = videoConversion.getSourceFilePath();
 
 		persistVideoConversionStatus(VideoConversionStatus.COPYING_FROM_OC);
+
+		// if no target-directory is specified, save the source-path as the target-directory
+		String targetFilePath;
+		if (videoConversion.getTargetDirectory() == null) {
+			videoConversion.setTargetDirectory(FilenameUtils.getFullPath(sourceFilePath));
+			GenericDao.getInstance().update(videoConversion);
+		}
+		
+		// the full path to the file
+		targetFilePath = videoConversion.getTargetFilePath();
+		
 		// download the file with a temporary filename to avoid simulanteous writing to the same file  
 		String suffix = "_oc_" + String.valueOf(createdVideo.getWidth());
-		String targetFilePath = FilenameHandler.addToBasename(sourceFilePath, suffix);
+		targetFilePath = FilenameHandler.addToBasename(targetFilePath, suffix);
 		try {
 			OpencastApiCall.downloadFile(createdVideo.getRemotePath(), targetFilePath);
 		} catch (IOException e) {
@@ -445,7 +467,7 @@ public class VideoConversionService {
 	 */
 	private CreatedVideo renameVideo(CreatedVideo createdVideo) {
 		// rename the file with an added width, example "originalname_1920.mp4"
-		String filePath = FilenameHandler.addToBasename(videoConversion.getSourceFilePath(), "_" + createdVideo.getWidth());
+		String filePath = FilenameHandler.addToBasename(videoConversion.getTargetFilePath(), "_" + createdVideo.getWidth());
 		logger.info("Renaming Video for videoConversion with sourceId {} to {} (path: {})", videoConversion.getSourceId(), createdVideo.getFilename(), createdVideo.getFilePath());
 
 		// rename

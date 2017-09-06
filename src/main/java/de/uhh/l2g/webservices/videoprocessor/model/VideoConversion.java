@@ -50,8 +50,13 @@ public class VideoConversion {
 
 	private String sourceFilePath;
 	
+	private String targetDirectory;
+	
 	@Transient
-	private String sourceFilename;
+	private String targetFilePath;
+	
+	@Transient
+	private String filename;
 
 	@Enumerated(EnumType.STRING)
 	private VideoConversionStatus status;
@@ -154,16 +159,47 @@ public class VideoConversion {
 	}
 
 	/**
+	 * @return the targetDirectory
+	 */
+	public String getTargetDirectory() {
+		return targetDirectory;
+	}
+
+
+	/**
+	 * @param targetDirectory the targetDirectory to set
+	 */
+	public void setTargetFilePath(String targetFilePath) {
+		this.targetDirectory = FilenameUtils.getFullPath(targetFilePath);
+	}
+	
+	/**
+	 * @return the target file path
+	 */
+	public String getTargetFilePath() {
+		return FilenameUtils.concat(targetDirectory, getFilename());
+	}
+
+
+	/**
+	 * @param targetDirectory the targetDirectory to set
+	 */
+	public void setTargetDirectory(String targetDirectory) {
+		this.targetDirectory = targetDirectory;
+	}
+
+
+	/**
 	 * @return the sourceFileName
 	 */
-	public String getSourceFilename() {
+	public String getFilename() {
 		return FilenameUtils.getName(sourceFilePath);
 	}
 
 	/**
 	 * @param sourceFileName the sourceFileName to set
 	 */
-	public void setSourceFilename(String sourceFilename) {
+	public void setFilename(String sourceFilename) {
 		String fullPath = FilenameUtils.getFullPath(sourceFilePath);
 		this.sourceFilePath = FilenameUtils.concat(fullPath, sourceFilename);
 	}
