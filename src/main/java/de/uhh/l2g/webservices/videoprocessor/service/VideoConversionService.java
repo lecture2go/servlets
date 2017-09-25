@@ -3,7 +3,9 @@ package de.uhh.l2g.webservices.videoprocessor.service;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
@@ -23,6 +25,7 @@ import de.uhh.l2g.webservices.videoprocessor.dao.GenericDao;
 import de.uhh.l2g.webservices.videoprocessor.model.CreatedFile;
 import de.uhh.l2g.webservices.videoprocessor.model.CreatedVideo;
 import de.uhh.l2g.webservices.videoprocessor.model.VideoConversion;
+import de.uhh.l2g.webservices.videoprocessor.model.VideoConversionHistoryEntry;
 import de.uhh.l2g.webservices.videoprocessor.model.VideoConversionStatus;
 import de.uhh.l2g.webservices.videoprocessor.model.opencast.Medium;
 import de.uhh.l2g.webservices.videoprocessor.model.opencast.Publication;
@@ -152,7 +155,7 @@ public class VideoConversionService {
 	
 	private void downloadVideos() {
 		videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getId());
-		List<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
+		Set<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
 		
 		for (CreatedFile createdFile: createdFiles) {
 			if (createdFile instanceof CreatedVideo) {
@@ -164,7 +167,7 @@ public class VideoConversionService {
 	private void renameVideos() {
 		// reload the videoConversion object to retrieve possible filename changes before downloading
 		videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getId());
-		List<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
+		Set<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
 		
 		for (CreatedFile createdFile: createdFiles) {
 			if (createdFile instanceof CreatedVideo) {
@@ -194,7 +197,7 @@ public class VideoConversionService {
 		//videoConversion.getCreatedVideos();
 
 		// if there already exist files for the videoConversion we need to rename them
-		List<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
+		Set<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
 		if (!createdFiles.isEmpty()) {			
 			for (CreatedFile createdFile: createdFiles) {
 				// the old SMIL file will be deleted as it is now outdated
@@ -262,7 +265,7 @@ public class VideoConversionService {
 	 * @return 
 	 */
 	private boolean fileCleanup(VideoConversion videoConversion) {
-		List<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
+		Set<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
 		if (createdFiles != null) {
 			for(CreatedFile createdFile: createdFiles) {
 				try {
@@ -281,7 +284,7 @@ public class VideoConversionService {
 	 * Builds SMIL file for adaptive streaming
 	 */
 	private void buildSmil() {
-		List<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
+		Set<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
 		List<CreatedVideo> createdVideos = new ArrayList<CreatedVideo>();
 		for (CreatedFile createdFile: createdFiles) {
 			if (createdFile instanceof CreatedVideo) {
@@ -509,6 +512,13 @@ public class VideoConversionService {
 		if (hasRelevanceForElapsedTime) {
 			videoConversion.updateElapsedTime();
 		}
+		// save a history entry for this video conversion
+		VideoConversionHistoryEntry history = new VideoConversionHistoryEntry();
+		history.setStatus(status);
+		history.setTime(new Date());
+		history.setVideoConversion(videoConversion);
+		GenericDao.getInstance().save(history);
+		
 		GenericDao.getInstance().update(videoConversion);
 		logger.info("The new status of the videoConversion with id: {} / source id: {} is {}", videoConversion.getId(), videoConversion.getSourceId(), status);
 	}

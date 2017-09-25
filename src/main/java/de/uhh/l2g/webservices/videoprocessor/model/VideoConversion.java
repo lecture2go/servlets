@@ -3,6 +3,7 @@ package de.uhh.l2g.webservices.videoprocessor.model;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.persistence.CascadeType;
@@ -14,6 +15,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.PostPersist;
+import javax.persistence.PostUpdate;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
@@ -23,10 +26,13 @@ import javax.persistence.Transient;
 import javax.persistence.TemporalType;
 
 import org.apache.commons.io.FilenameUtils;
+import org.hibernate.annotations.IndexColumn;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import de.uhh.l2g.webservices.videoprocessor.dao.GenericDao;
 
 
 /**
@@ -42,7 +48,6 @@ public class VideoConversion {
 	@Column(name = "id", updatable = false, nullable = false)
 	private Long id;
 	
-	//@Id
 	@Column(updatable = false)
 	private Long sourceId;
 
@@ -75,7 +80,11 @@ public class VideoConversion {
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "videoConversion", cascade={CascadeType.REMOVE} )
 	//@OneToMany(fetch = FetchType.EAGER, mappedBy = "videoConversion", orphanRemoval = true)
 	@JsonManagedReference
-	private List<CreatedFile> createdFiles;
+	private Set<CreatedFile> createdFiles;
+	
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "videoConversion", cascade={CascadeType.REMOVE} )
+	@JsonManagedReference
+	private List<VideoConversionHistoryEntry> videoConversionHistoryEntries;
 	
 	/**
 	 * Sets the startTime to the current date
@@ -85,9 +94,8 @@ public class VideoConversion {
 	protected void onCreate() {
 		startTime = new Date();
 	}
-	
-	
-	/**
+
+	/** 
 	 * Sets the elapsed time since the start date in a easily readable string: "hh:mm:ss"
 	 */
 	public void updateElapsedTime() {
@@ -281,7 +289,7 @@ public class VideoConversion {
 	/**
 	 * @return the createdFiles
 	 */
-	public List<CreatedFile> getCreatedFiles() {
+	public Set<CreatedFile> getCreatedFiles() {
 		return createdFiles;
 	}
 
@@ -292,7 +300,16 @@ public class VideoConversion {
 		this.createdFiles = createdFiles;
 	}*/
 	
-	public void addCreatedFiles(List<CreatedFile> createdFiles) {
+	public void addVideoConversionHistoryEntry(VideoConversionHistoryEntry historyEntry) {
+	    this.videoConversionHistoryEntries.add(historyEntry);
+	}
+	
+	
+	public void removeVideoConversionHistoryEntry(VideoConversionHistoryEntry historyEntry) {
+	    this.createdFiles.remove(historyEntry);
+	}
+	
+	public void addCreatedFiles(Set<CreatedFile> createdFiles) {
 	    this.createdFiles.addAll(createdFiles);
 	}
 	
@@ -319,7 +336,7 @@ public class VideoConversion {
 	@JsonIgnore
 	public List<CreatedVideo> getCreatedVideos() {
 		List<CreatedVideo> createdVideos = new ArrayList<CreatedVideo>();
-		List<CreatedFile> createdFiles = getCreatedFiles();
+		Set<CreatedFile> createdFiles = getCreatedFiles();
 		for (CreatedFile createdFile: createdFiles) {
 			if (createdFile instanceof CreatedVideo) {
 				createdVideos.add((CreatedVideo) createdFile);
