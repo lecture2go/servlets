@@ -29,7 +29,7 @@ import de.uhh.l2g.webservices.videoprocessor.service.VideoConversionService;
  *  All requests to this resource will be logged
  */
 @Logged
-@Secured
+//@Secured
 @Path("videoconversion")
 public class VideoConversionsResource {
 	

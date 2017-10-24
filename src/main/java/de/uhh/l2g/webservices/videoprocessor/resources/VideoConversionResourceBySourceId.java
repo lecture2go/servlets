@@ -11,7 +11,7 @@ import de.uhh.l2g.webservices.videoprocessor.model.VideoConversion;
  * All requests to this resource will be logged
  */
 @Logged
-@Secured
+//@Secured
 public class VideoConversionResourceBySourceId extends VideoConversionResource {
 
 	public VideoConversionResourceBySourceId(Long sourceId) {
