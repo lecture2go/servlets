@@ -67,7 +67,7 @@ public class VideoConversionService {
 		// persist a new videoConversion object
 		videoConversion = GenericDao.getInstance().save(videoConversion);
 		
-		persistVideoConversionStatus(VideoConversionStatus.COPYING_TO_OC);
+		persistVideoConversionStatus(videoConversion, VideoConversionStatus.COPYING_TO_OC);
 		
 		// if no workflow is given use the default workflow
 		if (videoConversion.getWorkflow() == null) {
@@ -80,12 +80,12 @@ public class VideoConversionService {
 			String opencastId = OpencastApiCall.postNewEventRequest(videoConversion.getSourceFilePath(), videoConversion.getFilename(), videoConversion.getId(), videoConversion.getWorkflow());
 			videoConversion.setOpencastId(opencastId);
 			// this status code change count towards the elapsed time
-			persistVideoConversionStatus(VideoConversionStatus.OC_RUNNING, true);
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.OC_RUNNING, true);
 		} catch(BadRequestException e) {
-			persistVideoConversionStatus(VideoConversionStatus.ERROR_COPYING_TO_OC_BAD_REQUEST);
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_COPYING_TO_OC_BAD_REQUEST);
 			return null;
 		} catch(WebApplicationException e) {
-			persistVideoConversionStatus(VideoConversionStatus.ERROR_COPYING_TO_OC);
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_COPYING_TO_OC);
 			return null;
 		}
 		return videoConversion;
@@ -103,13 +103,13 @@ public class VideoConversionService {
 		logger.info("Opencast has sent a http-notify for videoConversion with id: {} / sourceId: {} with the result: {}", videoConversion.getId(), videoConversion.getSourceId(), Boolean.toString(success));
 		if (success) {
 			// the opencast workflow was successful
-			persistVideoConversionStatus(VideoConversionStatus.OC_SUCCEEDED);
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.OC_SUCCEEDED);
 			
 			// get the event details and map them to createdVideo objects
 			List<Video> videos = OpencastApiCall.getVideos(videoConversion.getOpencastId());
 			if (videos.isEmpty()) {
 				// this status code change count towards the elapsed time
-				persistVideoConversionStatus(VideoConversionStatus.ERROR_RETRIEVING_VIDEO_METADATA_FROM_OC, true);
+				persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_RETRIEVING_VIDEO_METADATA_FROM_OC, true);
 				return;
 			}
 			List<CreatedVideo> createdVideos = mapMediaToCreatedVideos(videos);
@@ -137,18 +137,18 @@ public class VideoConversionService {
 	
 			// the process is finished
 			// this status code change count towards the elapsed time
-			persistVideoConversionStatus(VideoConversionStatus.FINISHED, true);
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.FINISHED, true);
 		} else {
 			// the opencast workflow failed
 			// this status code change count towards the elapsed time
-			persistVideoConversionStatus(VideoConversionStatus.ERROR_OC_FAILED, true);
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_OC_FAILED, true);
 		}
 		
 		// delete event (and files) in opencast
 		try {
 			OpencastApiCall.deleteEvent(videoConversion.getOpencastId());
 		} catch(Exception e) {
-			persistVideoConversionStatus(VideoConversionStatus.ERROR_DELETING_FROM_OC);
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_DELETING_FROM_OC);
 			return;
 		}
 	}
@@ -222,9 +222,9 @@ public class VideoConversionService {
 							FileHandler.deleteIfExists(newFilePath);
 						}
 						FileHandler.rename(oldFilePath, newFilePath);
-						persistVideoConversionStatus(VideoConversionStatus.RENAMED);
+						persistVideoConversionStatus(videoConversion, VideoConversionStatus.RENAMED);
 					} catch (IOException e) {
-						persistVideoConversionStatus(VideoConversionStatus.ERROR_RENAMING);
+						persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_RENAMING);
 						// if one file can not be renamed, stop the renaming process 
 						return false;
 					}
@@ -235,7 +235,7 @@ public class VideoConversionService {
 				// build SMIL file with renamed files
 				buildSmil();
 			}
-			persistVideoConversionStatus(VideoConversionStatus.FINISHED);
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.FINISHED);
 		}
 		return true;
 	}
@@ -254,7 +254,7 @@ public class VideoConversionService {
 		catch(NotFoundException e) {
 			// this simply means there is no event at opencast, this is default after a video encoding process is finished
 		} catch(WebApplicationException e) {
-			persistVideoConversionStatus(VideoConversionStatus.ERROR_DELETING_FROM_OC);
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_DELETING_FROM_OC);
 		} 
 		return cleanup();
 	}
@@ -271,7 +271,7 @@ public class VideoConversionService {
 				try {
 					FileHandler.deleteIfExists(createdFile.getFilePath());
 				} catch (Exception e) {
-					persistVideoConversionStatus(VideoConversionStatus.ERROR_DELETING);
+					persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_DELETING);
 					e.printStackTrace();
 					return false;
 				}
@@ -311,11 +311,11 @@ public class VideoConversionService {
 			FileHandler.deleteIfExists(smilFilePath);
 		} catch (SecurityException e) {
 			// no permission to delete
-			persistVideoConversionStatus(VideoConversionStatus.ERROR_DELETING);
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_DELETING);
 		}
 		
 		try {
-			persistVideoConversionStatus(VideoConversionStatus.CREATING_SMIL);
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.CREATING_SMIL);
 			SmilBuilder.buildSmil(smilFilePath, createdVideos);
 			// persist smil file as a createdFile object to database
 			CreatedFile smilFile = new CreatedFile();
@@ -323,7 +323,7 @@ public class VideoConversionService {
 			smilFile.setVideoConversion(videoConversion);
 			GenericDao.getInstance().save(smilFile);
 		} catch (ParserConfigurationException | TransformerException e) {
-			persistVideoConversionStatus(VideoConversionStatus.ERROR_CREATING_SMIL);
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_CREATING_SMIL);
 			e.printStackTrace();
 		}
 	}
@@ -346,8 +346,8 @@ public class VideoConversionService {
 			// delete all created files for the current videoconversion from database 
 			GenericDao.getInstance().deleteByFieldValue(CreatedFile.class, "videoConversion", videoConversion.getId());
 			// refresh the videoConversion object
-			this.videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getId());
-			persistVideoConversionStatus(VideoConversionStatus.DELETED);
+			videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getId());
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.DELETED);
 			return true;
 		} else {
 			return false;
@@ -434,7 +434,7 @@ public class VideoConversionService {
 	private CreatedVideo downloadVideo(CreatedVideo createdVideo) {
 		String sourceFilePath = videoConversion.getSourceFilePath();
 
-		persistVideoConversionStatus(VideoConversionStatus.COPYING_FROM_OC);
+		persistVideoConversionStatus(videoConversion, VideoConversionStatus.COPYING_FROM_OC);
 
 		// if no target-directory is specified, save the source-path as the target-directory
 		String targetFilePath;
@@ -452,7 +452,7 @@ public class VideoConversionService {
 		try {
 			OpencastApiCall.downloadFile(createdVideo.getRemotePath(), targetFilePath);
 		} catch (IOException e) {
-			persistVideoConversionStatus(VideoConversionStatus.ERROR_COPYING_FROM_OC);
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_COPYING_FROM_OC);
 			return null;
 		}
 		
@@ -474,14 +474,14 @@ public class VideoConversionService {
 		logger.info("Renaming Video for videoConversion with sourceId {} to {} (path: {})", videoConversion.getSourceId(), createdVideo.getFilename(), createdVideo.getFilePath());
 
 		// rename
-		persistVideoConversionStatus(VideoConversionStatus.RENAMING);
+		persistVideoConversionStatus(videoConversion, VideoConversionStatus.RENAMING);
 		
 		try {
 			// delete the old video if somehow existing
 			FileHandler.deleteIfExists(filePath);
 			FileHandler.rename(createdVideo.getFilePath(), filePath);
 		} catch (IOException e) {
-			persistVideoConversionStatus(VideoConversionStatus.ERROR_RENAMING);
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_RENAMING);
 
 			e.printStackTrace();
 			return null;
@@ -497,15 +497,15 @@ public class VideoConversionService {
 	 * Persists a given status of a video conversion
 	 * @param status the status to persist (as given in the VideoConversionStatus enum)
 	 */
-	private void persistVideoConversionStatus(VideoConversionStatus status) {
-		persistVideoConversionStatus(status, false);
+	private void persistVideoConversionStatus(VideoConversion videoConversion, VideoConversionStatus status) {
+		persistVideoConversionStatus(videoConversion, status, false);
 	}
 	
 	/**
 	 * Persists a given status of a video conversion and use the current timestamp to calculate the elapsedTime field of the videoconversion
 	 * @param status the status to persist (as given in the VideoConversionStatus enum)
 	 */
-	private void persistVideoConversionStatus(VideoConversionStatus status, boolean hasRelevanceForElapsedTime) {
+	private void persistVideoConversionStatus(VideoConversion videoConversion, VideoConversionStatus status, boolean hasRelevanceForElapsedTime) {
 		//TODO: this should not be necessary if entity is managed by JPA/Hibernate
 		GenericDao.getInstance().get(VideoConversion.class, videoConversion.getId());
 		videoConversion.setStatus(status);
