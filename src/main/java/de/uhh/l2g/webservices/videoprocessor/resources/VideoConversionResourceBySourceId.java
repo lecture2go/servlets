@@ -15,7 +15,6 @@ import de.uhh.l2g.webservices.videoprocessor.model.VideoConversion;
 public class VideoConversionResourceBySourceId extends VideoConversionResource {
 
 	public VideoConversionResourceBySourceId(Long sourceId) {
-		id = sourceId;
-		videoConversion = GenericDao.getInstance().getFirstByFieldValue(VideoConversion.class, "sourceId",  sourceId);
+		videoConversion = GenericDao.getInstance().getFirstByFieldValueOrderedDesc(VideoConversion.class, "sourceId",  sourceId, "startTime");
 	}
 }

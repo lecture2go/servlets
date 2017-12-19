@@ -57,12 +57,8 @@ public class VideoConversionService {
 
 		logger.info("A new videoConversion is started for the sourceId {}", videoConversion.getSourceId());
 		
-		// check if there is a record with the sourceid existing, if so delete the corresponding created files and mark the the record
-		VideoConversion videoConversionDb = GenericDao.getInstance().getFirstByFieldValue(VideoConversion.class, "sourceId", videoConversion.getSourceId());
-		if (videoConversionDb != null) {
-			// delete old files
-			cleanup(videoConversionDb);
-		}
+		// delete the last videoconversion with this sourceId
+		VideoConversion videoConversionDb = GenericDao.getInstance().getFirstByFieldValueOrderedDesc(VideoConversion.class, "sourceId", videoConversion.getSourceId(), "startTime");
 		
 		// persist a new videoConversion object
 		videoConversion = GenericDao.getInstance().save(videoConversion);

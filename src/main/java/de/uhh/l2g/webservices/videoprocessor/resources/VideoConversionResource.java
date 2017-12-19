@@ -32,14 +32,12 @@ import de.uhh.l2g.webservices.videoprocessor.service.VideoConversionService;
 @Logged
 //@Secured
 public class VideoConversionResource {
-	protected Long id;
 	protected VideoConversion videoConversion;
 	
 	public VideoConversionResource() {
 	}
 	
 	public VideoConversionResource(Long id) {
-		this.id = id;
 		videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
 	}
 	
