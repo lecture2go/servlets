@@ -1,0 +1,44 @@
+package de.uhh.l2g.webservices.videoprocessor.util;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+
+import org.apache.commons.io.FileUtils;
+
+/**
+ * Util class to handle files (downloading, renaming, deleting,..)
+ */
+public class FileHandler {
+	
+	/**
+	 * Downloads the file at the given URL to the given filepath
+	 * @param sourceUrlString the URL from where the file will be downloaded
+	 * @param targetPath the path where the file will be saved
+	 * @throws IOException
+	 */
+	public static void download(String sourceUrlString, String targetPath) throws IOException {
+		File target = new File(targetPath);
+		URL sourceUrl = new URL(sourceUrlString);
+		FileUtils.copyURLToFile(sourceUrl, target);
+	}
+	
+	/**
+	 * Renames the file
+	 * @param sourcePath the current path
+	 * @param targetPath the future path
+	 * @throws IOException
+	 */
+	public static void rename(String sourcePath, String targetPath) throws IOException {
+		FileUtils.moveFile(FileUtils.getFile(sourcePath), FileUtils.getFile(targetPath));
+	}
+	
+	/**
+	 * Deletes the file
+	 * @param filePath the filePath of the file to delete
+	 * @throws SecurityException
+	 */
+	public static void deleteIfExists(String filePath) throws SecurityException {
+		FileUtils.getFile(filePath).delete();
+	}
+}
