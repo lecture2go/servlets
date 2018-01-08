@@ -194,6 +194,8 @@ public class VideoConversionService {
 
 		// if there already exist files for the videoConversion we need to rename them
 		Set<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
+		// keep track of the created video files, as they are 
+		List<CreatedVideo> createdVideos = new ArrayList<CreatedVideo>();
 		if (!createdFiles.isEmpty()) {			
 			for (CreatedFile createdFile: createdFiles) {
 				// the old SMIL file will be deleted as it is now outdated
@@ -211,6 +213,7 @@ public class VideoConversionService {
 					
 					createdFile.setFilename(newFilename);
 					GenericDao.getInstance().update(createdFile);
+					createdVideos.add((CreatedVideo) createdFile);
 					String newFilePath = createdFile.getFilePath();
 					try {
 						// delete the old file if somehow existing (and oldfilename differs from newfilename)
@@ -229,7 +232,7 @@ public class VideoConversionService {
 			
 			if (videoConversion.getCreateSmil()) {
 				// build SMIL file with renamed files
-				buildSmil();
+				buildSmil(createdVideos);
 			}
 			persistVideoConversionStatus(videoConversion, VideoConversionStatus.FINISHED);
 		}
@@ -274,20 +277,6 @@ public class VideoConversionService {
 			}
 		}
 		return true;
-	}
-	
-	/**
-	 * Builds SMIL file for adaptive streaming
-	 */
-	private void buildSmil() {
-		Set<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
-		List<CreatedVideo> createdVideos = new ArrayList<CreatedVideo>();
-		for (CreatedFile createdFile: createdFiles) {
-			if (createdFile instanceof CreatedVideo) {
-				createdVideos.add((CreatedVideo) createdFile);
-			}
-		}
-		buildSmil(createdVideos);
 	}
 
 	/**
