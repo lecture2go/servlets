@@ -74,6 +74,11 @@
         	<artifactId>hibernate-entitymanager</artifactId>
         	<version>5.1.6.Final</version>
         </dependency>
+		<dependency>
+		    <groupId>org.hibernate</groupId>
+		    <artifactId>hibernate-c3p0</artifactId>
+		    <version>5.1.6.Final</version>
+		</dependency>
         <dependency>
         	<groupId>mysql</groupId>
         	<artifactId>mysql-connector-java</artifactId>
