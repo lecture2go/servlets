@@ -59,6 +59,10 @@ public class VideoConversionService {
 		
 		// delete the last videoconversion with this sourceId
 		VideoConversion videoConversionDb = GenericDao.getInstance().getFirstByFieldValueOrderedDesc(VideoConversion.class, "sourceId", videoConversion.getSourceId(), "startTime");
+		if (videoConversionDb != null) {
+			// delete old files
+			cleanup(videoConversionDb);
+		}
 		
 		// persist a new videoConversion object
 		videoConversion = GenericDao.getInstance().save(videoConversion);
