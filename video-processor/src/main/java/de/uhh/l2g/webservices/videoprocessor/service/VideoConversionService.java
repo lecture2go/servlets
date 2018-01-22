@@ -134,6 +134,14 @@ public class VideoConversionService {
 				// build SMIL file
 				buildSmil(createdVideos);
 			}
+			
+			// delete event (and files) in opencast
+			try {
+				OpencastApiCall.deleteEvent(videoConversion.getOpencastId());
+			} catch(Exception e) {
+				persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_DELETING_FROM_OC);
+				return;
+			}
 	
 			// the process is finished
 			// this status code change count towards the elapsed time
@@ -142,14 +150,6 @@ public class VideoConversionService {
 			// the opencast workflow failed
 			// this status code change count towards the elapsed time
 			persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_OC_FAILED, true);
-		}
-		
-		// delete event (and files) in opencast
-		try {
-			OpencastApiCall.deleteEvent(videoConversion.getOpencastId());
-		} catch(Exception e) {
-			persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_DELETING_FROM_OC);
-			return;
 		}
 	}
 	
