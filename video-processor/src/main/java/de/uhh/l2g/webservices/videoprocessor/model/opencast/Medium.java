@@ -1,3 +1,4 @@
+
 package de.uhh.l2g.webservices.videoprocessor.model.opencast;
 
 import java.util.HashMap;
@@ -15,228 +16,150 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-"has_audio",
-"framerate",
-"description",
-"bitrate",
-"url",
-"has_video",
-"tags",
-"flavor",
-"duration",
-"size",
-"framecount",
-"checksum",
-"width",
-"id",
-"mediatype",
-"height"
+    "duration",
+    "flavor",
+    "identifier",
+    "size",
+    "streams",
+    "checksum",
+    "description",
+    "element-description",
+    "uri",
+    "tags"
 })
 public class Medium {
-	
-	@JsonProperty("has_audio")
-	private Boolean hasAudio;
-	@JsonProperty("framerate")
-	private Integer framerate;
-	@JsonProperty("description")
-	private String description;
-	@JsonProperty("bitrate")
-	private Integer bitrate;
-	@JsonProperty("url")
-	private String url;
-	@JsonProperty("has_video")
-	private Boolean hasVideo;
-	@JsonProperty("tags")
-	private List<String> tags = null;
-	@JsonProperty("flavor")
-	private String flavor;
-	@JsonProperty("duration")
-	private Integer duration;
-	@JsonProperty("size")
-	private Integer size;
-	@JsonProperty("framecount")
-	private Integer framecount;
-	@JsonProperty("checksum")
-	private String checksum;
-	@JsonProperty("width")
-	private Integer width;
-	@JsonProperty("id")
-	private String id;
-	@JsonProperty("mediatype")
-	private String mediatype;
-	@JsonProperty("height")
-	private Integer height;
-	@JsonIgnore
-	private Map<String, Object> additionalProperties = new HashMap<String, Object>();
-	
-	@JsonProperty("has_audio")
-	public Boolean getHasAudio() {
-		return hasAudio;
-	}
-	
-	@JsonProperty("has_audio")
-	public void setHasAudio(Boolean hasAudio) {
-		this.hasAudio = hasAudio;
-	}
-	
-	@JsonProperty("framerate")
-	public Integer getFramerate() {
-		return framerate;
-	}
-	
-	@JsonProperty("framerate")
-	public void setFramerate(Integer framerate) {
-		this.framerate = framerate;
-	}
-	
-	@JsonProperty("description")
-	public String getDescription() {
-		return description;
-	}
-	
-	@JsonProperty("description")
-	public void setDescription(String description) {
-		this.description = description;
-	}
-	
-	@JsonProperty("bitrate")
-	public Integer getBitrate() {
-		return bitrate;
-	}
-	
-	@JsonProperty("bitrate")
-	public void setBitrate(Integer bitrate) {
-		this.bitrate = bitrate;
-	}
-	
-	@JsonProperty("url")
-	public String getUrl() {
-		return url;
-	}
-	
-	@JsonProperty("url")
-	public void setUrl(String url) {
-		this.url = url;
-	}
-	
-	@JsonProperty("has_video")
-	public Boolean getHasVideo() {
-		return hasVideo;
-	}
-	
-	@JsonProperty("has_video")
-	public void setHasVideo(Boolean hasVideo) {
-		this.hasVideo = hasVideo;
-	}
-	
-	@JsonProperty("tags")
-	public List<String> getTags() {
-		return tags;
-	}
-	
-	@JsonProperty("tags")
-	public void setTags(List<String> tags) {
-		this.tags = tags;
-	}
-	
-	@JsonProperty("flavor")
-	public String getFlavor() {
-		return flavor;
-	}
-	
-	@JsonProperty("flavor")
-	public void setFlavor(String flavor) {
-		this.flavor = flavor;
-	}
-	
-	@JsonProperty("duration")
-	public Integer getDuration() {
-	return duration;
-	}
-	
-	@JsonProperty("duration")
-	public void setDuration(Integer duration) {
-		this.duration = duration;
-	}
-	
-	@JsonProperty("size")
-	public Integer getSize() {
-		return size;
-	}
-	
-	@JsonProperty("size")
-	public void setSize(Integer size) {
-		this.size = size;
-	}
-	
-	@JsonProperty("framecount")
-	public Integer getFramecount() {
-		return framecount;
-	}
-	
-	@JsonProperty("framecount")
-	public void setFramecount(Integer framecount) {
-		this.framecount = framecount;
-	}
-	
-	@JsonProperty("checksum")
-	public String getChecksum() {
-		return checksum;
-	}
-	
-	@JsonProperty("checksum")
-	public void setChecksum(String checksum) {
-		this.checksum = checksum;
-	}
-	
-	@JsonProperty("width")
-	public Integer getWidth() {
-		return width;
-	}
-	
-	@JsonProperty("width")
-	public void setWidth(Integer width) {
-		this.width = width;
-	}
-	
-	@JsonProperty("id")
-	public String getId() {
-		return id;
-	}
-	
-	@JsonProperty("id")
-	public void setId(String id) {
-		this.id = id;
-	}
-	
-	@JsonProperty("mediatype")
-	public String getMediatype() {
-		return mediatype;
-	}
-	
-	@JsonProperty("mediatype")
-	public void setMediatype(String mediatype) {
-		this.mediatype = mediatype;
-	}
-	
-	@JsonProperty("height")
-	public Integer getHeight() {
-		return height;
-	}
-	
-	@JsonProperty("height")
-	public void setHeight(Integer height) {
-		this.height = height;
-	}
-	
-	@JsonAnyGetter
-	public Map<String, Object> getAdditionalProperties() {
-		return this.additionalProperties;
-	}
-	
-	@JsonAnySetter
-	public void setAdditionalProperty(String name, Object value) {
-		this.additionalProperties.put(name, value);
-	}
+
+    @JsonProperty("duration")
+    private Integer duration;
+    @JsonProperty("flavor")
+    private String flavor;
+    @JsonProperty("identifier")
+    private String identifier;
+    @JsonProperty("size")
+    private Integer size;
+    @JsonProperty("streams")
+    private Streams streams;
+    @JsonProperty("checksum")
+    private String checksum;
+    @JsonProperty("description")
+    private String description;
+    @JsonProperty("element-description")
+    private String elementDescription;
+    @JsonProperty("uri")
+    private String uri;
+    @JsonProperty("tags")
+    private List<String> tags = null;
+    @JsonIgnore
+    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+
+    @JsonProperty("duration")
+    public Integer getDuration() {
+        return duration;
+    }
+
+    @JsonProperty("duration")
+    public void setDuration(Integer duration) {
+        this.duration = duration;
+    }
+
+    @JsonProperty("flavor")
+    public String getFlavor() {
+        return flavor;
+    }
+
+    @JsonProperty("flavor")
+    public void setFlavor(String flavor) {
+        this.flavor = flavor;
+    }
+
+    @JsonProperty("identifier")
+    public String getIdentifier() {
+        return identifier;
+    }
+
+    @JsonProperty("identifier")
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
+    }
+
+    @JsonProperty("size")
+    public Integer getSize() {
+        return size;
+    }
+
+    @JsonProperty("size")
+    public void setSize(Integer size) {
+        this.size = size;
+    }
+
+    @JsonProperty("streams")
+    public Streams getStreams() {
+        return streams;
+    }
+
+    @JsonProperty("streams")
+    public void setStreams(Streams streams) {
+        this.streams = streams;
+    }
+
+    @JsonProperty("checksum")
+    public String getChecksum() {
+        return checksum;
+    }
+
+    @JsonProperty("checksum")
+    public void setChecksum(String checksum) {
+        this.checksum = checksum;
+    }
+
+    @JsonProperty("description")
+    public String getDescription() {
+        return description;
+    }
+
+    @JsonProperty("description")
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    @JsonProperty("element-description")
+    public String getElementDescription() {
+        return elementDescription;
+    }
+
+    @JsonProperty("element-description")
+    public void setElementDescription(String elementDescription) {
+        this.elementDescription = elementDescription;
+    }
+
+    @JsonProperty("uri")
+    public String getUri() {
+        return uri;
+    }
+
+    @JsonProperty("uri")
+    public void setUri(String uri) {
+        this.uri = uri;
+    }
+
+    @JsonProperty("tags")
+    public List<String> getTags() {
+        return tags;
+    }
+
+    @JsonProperty("tags")
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
+    }
 
 }

@@ -69,7 +69,7 @@ public class VideoConversionResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response postFilenameForVideoConversion(HashMap<String,String> filenameMap) {
 		VideoConversionService vc = new VideoConversionService(videoConversion);
-		if (vc.renameFiles(filenameMap.get("sourceFileName"))) {
+		if (vc.handleRenameRequest(filenameMap.get("sourceFileName"))) {
 			return Response.ok().build();
 		} else {
 			throw new InternalServerErrorException();

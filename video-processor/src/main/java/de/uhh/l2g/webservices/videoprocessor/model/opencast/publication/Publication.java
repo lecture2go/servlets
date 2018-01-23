@@ -1,4 +1,4 @@
-package de.uhh.l2g.webservices.videoprocessor.model.opencast;
+package de.uhh.l2g.webservices.videoprocessor.model.opencast.publication;
 
 import java.util.HashMap;
 import java.util.List;

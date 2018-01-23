@@ -34,8 +34,8 @@ import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import de.uhh.l2g.webservices.videoprocessor.model.opencast.Publication;
-import de.uhh.l2g.webservices.videoprocessor.model.opencast.Video;
+import de.uhh.l2g.webservices.videoprocessor.model.opencast.publication.Publication;
+import de.uhh.l2g.webservices.videoprocessor.model.opencast.Medium;
 import de.uhh.l2g.webservices.videoprocessor.util.Config;
 
 
@@ -122,18 +122,17 @@ public class OpencastApiCall {
 	}
 	
 	/**
-	 * Gets a list of videos for an opencast-Id from the opencast event endpoint
-	 * @param opencastEventId the opencastEventId whose video are extracted
-	 * @return a list of video objects
+	 * Gets a list of media for an opencast-Id from the opencast event endpoint
+	 * @param opencastEventId the opencastEventId whose media are extracted
+	 * @return a list of media objects
 	 */
-	public static List<Video> getVideos(String opencastEventId) {
+	public static List<Medium> getMedia(String opencastEventId) {
 		String mediaEndpoint = eventEndpoint + "/" + opencastEventId + "/media";
 		WebTarget target = prepareApiCall(mediaEndpoint);
 		
-		// saves a list of ob publications to a publications object
-		List<Video> videos = target.request(MediaType.APPLICATION_JSON_TYPE).get(new GenericType<List<Video>>() {});
+		List<Medium> media = target.request(MediaType.APPLICATION_JSON_TYPE).get(new GenericType<List<Medium>>() {});
 		
-		return videos;
+		return media;
 	}
 	
 	
