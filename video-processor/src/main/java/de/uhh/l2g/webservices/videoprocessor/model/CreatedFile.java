@@ -18,6 +18,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * The CreatedFile model describes files which where created in the file system via the videoConversion
@@ -41,6 +42,11 @@ public class CreatedFile {
 	@JsonBackReference
 	@ManyToOne
 	protected VideoConversion videoConversion;
+	
+	// the remote path is temporarily used and will not be persisted
+	@Transient
+	@JsonIgnore
+	private String remotePath;
 	
 	/**
 	 * Sets the creationTime to the current date
@@ -123,4 +129,20 @@ public class CreatedFile {
 	public void setVideoConversion(VideoConversion videoConversion) {
 		this.videoConversion = videoConversion;
 	}
+	
+
+	/**
+	 * @return the remotePath
+	 */
+	public String getRemotePath() {
+		return remotePath;
+	}
+
+	/**
+	 * @param remotePath the remotePath to set
+	 */
+	public void setRemotePath(String remotePath) {
+		this.remotePath = remotePath;
+	}
+
 }
