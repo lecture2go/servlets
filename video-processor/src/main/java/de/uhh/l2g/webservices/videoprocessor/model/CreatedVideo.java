@@ -28,11 +28,6 @@ public class CreatedVideo extends CreatedFile {
 	private int height;
 
 	private int bitrate;
-	
-	// the remote path is temporarily used and will not be persisted
-	@Transient
-	@JsonIgnore
-	private String remotePath;
 
 	/**
 	 * @return the bitrate
@@ -103,20 +98,4 @@ public class CreatedVideo extends CreatedFile {
 	public void setHeight(int height) {
 		this.height = height;
 	}
-
-	/**
-	 * @return the remotePath
-	 */
-	public String getRemotePath() {
-		return remotePath;
-	}
-
-	/**
-	 * @param remotePath the remotePath to set
-	 */
-	public void setRemotePath(String remotePath) {
-		this.remotePath = remotePath;
-	}
-
-	
 }

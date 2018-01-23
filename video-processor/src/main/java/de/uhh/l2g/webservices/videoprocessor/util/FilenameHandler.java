@@ -9,7 +9,7 @@ import org.apache.commons.io.FilenameUtils;
 public class FilenameHandler {
 	
 	/**
-	 * Switches the basename of a file
+	 * Switch the basename of a file
 	 * e.g. /test/test123.mp4 has the basename test123, this part will be replaced by the new basename
 	 * 
 	 * @param filePath the file path of the file
@@ -23,7 +23,7 @@ public class FilenameHandler {
 	}
 	
 	/**
-	 * Adds a suffix to the basename of a filePath
+	 * Add a suffix to the basename of a filePath
 	 * @param filePath the file path of the file
 	 * @param stringToAdd the string which will be added to the basename
 	 * @return the file path with the basename including the added string
@@ -32,5 +32,18 @@ public class FilenameHandler {
 		String basename = FilenameUtils.getBaseName(filePath);
 		String newBasename = basename + stringToAdd;
 		return switchBasename(filePath, newBasename);
+	}
+	
+	/**
+	 * Switch extension of a given filepath
+	 * @param filePath the file path of the file
+	 * @param extension the new extension
+	 * @return the file path with the filepath and the new extension
+	 */
+	public static String switchExtension(String filePath, String extension) {
+		String basePath = FilenameUtils.getFullPath(filePath);
+		String basename = FilenameUtils.getBaseName(filePath);
+		String fullFilename = basename + "." + extension;
+		return FilenameUtils.concat(basePath, fullFilename);
 	}
 }
