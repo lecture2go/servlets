@@ -210,12 +210,12 @@ public class VideoConversionService {
 					}
 					String newFilePath = createdFile.getFilePath();
 					try {
-						// delete the old file if somehow existing (and oldfilename differs from newfilename)
-						if (newFilePath != oldFilePath) {
-							FileHandler.deleteIfExists(newFilePath);
+						// there may be cases where other services have already renamed the file (e.g. l2go handles the audio-file), check for those cases
+						if(FileHandler.checkIfFileExists(oldFilePath)) {
+							// the file exists, rename it!
+							FileHandler.rename(oldFilePath, newFilePath);
+							persistVideoConversionStatus(videoConversion, VideoConversionStatus.RENAMED);
 						}
-						FileHandler.rename(oldFilePath, newFilePath);
-						persistVideoConversionStatus(videoConversion, VideoConversionStatus.RENAMED);
 					} catch (IOException e) {
 						persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_RENAMING);
 						// if one file can not be renamed, stop the renaming process 
@@ -385,7 +385,7 @@ public class VideoConversionService {
 		List<CreatedFile> createdFiles = new ArrayList<CreatedFile>();
 		for(Medium video: media) {
 			// map
-			if (video.getIdentifier().startsWith("video")) {
+			if (video.getIdentifier().toLowerCase().startsWith("video")) {
 				CreatedVideo createdVideo = new CreatedVideo();
 				// set reference to videoConversion object
 				createdVideo.setVideoConversion(videoConversion);

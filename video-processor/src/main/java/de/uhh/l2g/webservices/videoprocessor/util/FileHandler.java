@@ -41,4 +41,13 @@ public class FileHandler {
 	public static void deleteIfExists(String filePath) throws SecurityException {
 		FileUtils.getFile(filePath).delete();
 	}
+
+	/**
+	 * Check if a file exists in the file system
+	 * @param filePath the path to the file
+	 * @return true if the file exists, false if not
+	 */
+	public static boolean checkIfFileExists(String filePath) {
+		return (new File(filePath).isFile());
+	}
 }
