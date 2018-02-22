@@ -20,7 +20,7 @@ public class SpeakerSlidesL2goImageBuilder extends L2goImageBuilder {
 		super(author, institution, title, series, date);
 	
 		// the image width (in pixels) is used to determine the maximum text length per line
-		this.imageWidth  = 632;
+		this.imageWidth  = 640;
 		
 		// the distance from the image-border to the start of text in pixels
 		this.offsetLeft = 10;
