@@ -34,6 +34,8 @@ public class L2goImageBuilderServlet extends HttpServlet {
 		String series = request.getParameter("series")!=null ? request.getParameter("series") : "";
 		String date = request.getParameter("date")!=null ? request.getParameter("date") : "";		
 		String type = request.getParameter("type")!=null ? request.getParameter("type") : "";
+		String downscale = request.getParameter("downscale")!=null ? request.getParameter("downscale") : "";
+
 		
 		if (type.equals("speakerslides")) {
 			SpeakerSlidesL2goImageBuilder imageBuilder = new SpeakerSlidesL2goImageBuilder(author, institution, title, series, date);
@@ -47,12 +49,15 @@ public class L2goImageBuilderServlet extends HttpServlet {
 			BufferedImage image = imageBuilder.buildImage();
 		
 			// scales the image down to the needed size
-			BufferedImage scaledImage = imageBuilder.scaleImage(image, 320, 240);
+			if (downscale.equalsIgnoreCase("true")) {
+				image = imageBuilder.scaleImage(image, 320, 240);
+			}
 			// the old (manual) scaling method is disabled
 			//BufferedImage scaledImage = imageBuilder.scaleImage(image, 320, 240, RenderingHints.VALUE_INTERPOLATION_BICUBIC, true);
 			
 			// finally write the image to the browser as PNG file
-			ImageIO.write(scaledImage, "png", response.getOutputStream());
+	
+			ImageIO.write(image, "png", response.getOutputStream());
 		} else if (type.equals("speakeronly")) {			
 			SpeakerOnlyL2goImageBuilder imageBuilder = new SpeakerOnlyL2goImageBuilder(author, institution, title, series, date);
 			InputStream backgroundimageStream = getServletContext().getResourceAsStream("/WEB-INF/generic_speakeronly.png");
@@ -66,12 +71,15 @@ public class L2goImageBuilderServlet extends HttpServlet {
 			BufferedImage image = imageBuilder.buildImage();
 			
 			// scales the image down to the needed size
-			BufferedImage scaledImage = imageBuilder.scaleImage(image, 1024, 107);
+			// scales the image down to the needed size
+			if (downscale.equalsIgnoreCase("true")) {
+				image = imageBuilder.scaleImage(image, 1024, 107);
+			}
 			// the old (manual) scaling method is disabled
 			//BufferedImage scaledImage = imageBuilder.scaleImage(image, 1024, 107, RenderingHints.VALUE_INTERPOLATION_BILINEAR, true);
 			
 			// finally write the image to the browser as PNG file
-			ImageIO.write(scaledImage, "png", response.getOutputStream());
+			ImageIO.write(image, "png", response.getOutputStream());
 		} 
 	}
 	
