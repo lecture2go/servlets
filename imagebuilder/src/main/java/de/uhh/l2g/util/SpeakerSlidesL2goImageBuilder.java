@@ -43,7 +43,8 @@ public class SpeakerSlidesL2goImageBuilder extends L2goImageBuilder {
         int titlePosition;
         int seriesPosition;
     	
-    	String seriesAndDate = "[ " + this.series + " / " + this.date + " ]"; 
+    	// series and date are handled as one
+        String seriesAndDate = getSeriesAndDate();
    	    	
     	// the author position is fixed
     	authorPosition = 106;

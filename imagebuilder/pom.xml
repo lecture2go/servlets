@@ -20,12 +20,21 @@
 		  </plugin>
 	  </plugins>
   </build>
+  
+  
   <dependencies>
   	<dependency>
   		<groupId>javax.servlet</groupId>
   		<artifactId>javax.servlet-api</artifactId>
   		<version>4.0.0-b01</version>
   	</dependency>
+	<!-- https://mvnrepository.com/artifact/com.twelvemonkeys.imageio/imageio-core -->
+	<dependency>
+	    <groupId>com.twelvemonkeys.imageio</groupId>
+	    <artifactId>imageio-core</artifactId>
+	    <version>3.3.2</version>
+	</dependency>
+	
   </dependencies>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

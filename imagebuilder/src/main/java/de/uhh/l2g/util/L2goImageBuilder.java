@@ -4,6 +4,8 @@ import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
+import com.twelvemonkeys.image.ResampleOp;
+
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -11,6 +13,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Font;
 import java.awt.Transparency;
 import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
 import java.awt.FontFormatException;
 import java.awt.RenderingHints;
 
@@ -90,6 +93,28 @@ public abstract class L2goImageBuilder {
 		} catch (IOException e) {
 			e.printStackTrace();
 		} 
+	}
+	
+	/**
+	 * Return the combined series and date string
+	 * @return
+	 */
+	protected String getSeriesAndDate() {
+		// return empty String if no series or date are given
+		if (this.series.isEmpty() && this.date.isEmpty()) {
+			return "";
+		}
+		
+		String seriesAndDate = "[ ";
+		        if (!this.series.isEmpty() && !this.date.isEmpty()) {
+        	seriesAndDate += this.series + " / " + this.date; 
+        } else if (!this.series.isEmpty() && this.date.isEmpty()) {
+        	seriesAndDate += this.series; 
+        } else if (this.series.isEmpty() && !this.date.isEmpty()) {
+        	seriesAndDate += this.date;
+        }
+		seriesAndDate += " ]";
+        return seriesAndDate;
 	}
 
 	/**
@@ -213,6 +238,20 @@ public abstract class L2goImageBuilder {
   		g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
     }
+    
+    /**
+     * Resizes an image
+     * uses external library (twelvemonkeys imageio)
+     * @param img the image file
+     * @param targetWidth the final width
+     * @param targetHeight the final height
+     * @return
+     */
+    public BufferedImage scaleImage(BufferedImage img, int targetWidth, int targetHeight) {
+    	BufferedImageOp resampler = new ResampleOp(targetWidth, targetHeight, ResampleOp.FILTER_LANCZOS);
+    	BufferedImage scaledImage = resampler.filter(img, null);
+    	return scaledImage;
+    }
 
     /**
      * Resizes an image
@@ -225,7 +264,8 @@ public abstract class L2goImageBuilder {
      * @return
      */
     public BufferedImage scaleImage(BufferedImage img, int targetWidth, int targetHeight, Object hint, boolean higherQuality) {
-		int type = (img.getTransparency() == Transparency.OPAQUE) ?
+    	// this is the old manual resizing, it is replaced by a third party resizing (see above)
+    	int type = (img.getTransparency() == Transparency.OPAQUE) ?
 		BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_ARGB;
 		BufferedImage ret = (BufferedImage)img;
 		int w, h;
@@ -244,26 +284,26 @@ public abstract class L2goImageBuilder {
 		
 		do {
 			if (higherQuality && w > targetWidth) {
-				w /= 2;
+				w /= 1.6;
 				if (w < targetWidth) {
-				w = targetWidth;
+					w = targetWidth;
+				}
 			}
-		}
 		
-		if (higherQuality && h > targetHeight) {
-			h /= 2;
-			if (h < targetHeight) {
-				h = targetHeight;
+			if (higherQuality && h > targetHeight) {
+				h /= 1.6;
+				if (h < targetHeight) {
+					h = targetHeight;
+				}
 			}
-		}
-		
-		BufferedImage tmp = new BufferedImage(w, h, type);
-		Graphics2D g2 = tmp.createGraphics();
-		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, hint);
-		g2.drawImage(ret, 0, 0, w, h, null);
-		g2.dispose();
-		
-		ret = tmp;
+			
+			BufferedImage tmp = new BufferedImage(w, h, type);
+			Graphics2D g2 = tmp.createGraphics();
+			g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, hint);
+			g2.drawImage(ret, 0, 0, w, h, null);
+			g2.dispose();
+			
+			ret = tmp;
 		} while (w != targetWidth || h != targetHeight);
 		
 		return ret;
@@ -338,4 +378,6 @@ public abstract class L2goImageBuilder {
 	public float getfontSize() {
 		return this.fontSize;
 	}
+	
+	
 }

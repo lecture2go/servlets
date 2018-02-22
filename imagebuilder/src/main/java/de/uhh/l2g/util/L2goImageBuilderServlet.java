@@ -47,23 +47,28 @@ public class L2goImageBuilderServlet extends HttpServlet {
 			BufferedImage image = imageBuilder.buildImage();
 		
 			// scales the image down to the needed size
-			BufferedImage scaledImage = imageBuilder.scaleImage(image, 316, 240, RenderingHints.VALUE_INTERPOLATION_BICUBIC, true);
+			BufferedImage scaledImage = imageBuilder.scaleImage(image, 320, 240);
+			// the old (manual) scaling method is disabled
+			//BufferedImage scaledImage = imageBuilder.scaleImage(image, 320, 240, RenderingHints.VALUE_INTERPOLATION_BICUBIC, true);
 			
 			// finally write the image to the browser as PNG file
 			ImageIO.write(scaledImage, "png", response.getOutputStream());
-		} else if (type.equals("speakeronly")) {
+		} else if (type.equals("speakeronly")) {			
 			SpeakerOnlyL2goImageBuilder imageBuilder = new SpeakerOnlyL2goImageBuilder(author, institution, title, series, date);
 			InputStream backgroundimageStream = getServletContext().getResourceAsStream("/WEB-INF/generic_speakeronly.png");
 			imageBuilder.setBackgroundimageStream(backgroundimageStream);
 
-			imageBuilder.setFontSize(30.0f);
+			imageBuilder.setFontSize(40.0f);
+
 			initializeFonts(imageBuilder);
 			
 			// builds a large image with the given data
 			BufferedImage image = imageBuilder.buildImage();
 			
 			// scales the image down to the needed size
-			BufferedImage scaledImage = imageBuilder.scaleImage(image, 720, 75, RenderingHints.VALUE_INTERPOLATION_BICUBIC, true);
+			BufferedImage scaledImage = imageBuilder.scaleImage(image, 1024, 107);
+			// the old (manual) scaling method is disabled
+			//BufferedImage scaledImage = imageBuilder.scaleImage(image, 1024, 107, RenderingHints.VALUE_INTERPOLATION_BILINEAR, true);
 			
 			// finally write the image to the browser as PNG file
 			ImageIO.write(scaledImage, "png", response.getOutputStream());
