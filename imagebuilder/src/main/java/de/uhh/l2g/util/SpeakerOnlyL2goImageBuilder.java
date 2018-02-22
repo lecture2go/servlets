@@ -61,7 +61,10 @@ public class SpeakerOnlyL2goImageBuilder extends L2goImageBuilder {
 	    int maxLines;
 	    
 	    // a prefix to fill the gap between author and institution if necessary
-	    String institutionPrefix = ", ";
+	    String institutionPrefix = "";
+	    if (!this.author.isEmpty() && !this.institution.isEmpty()) {
+	    	institutionPrefix = ", ";
+	    }
 
 	    this.g.setFont(this.fontItalic);
 	    
