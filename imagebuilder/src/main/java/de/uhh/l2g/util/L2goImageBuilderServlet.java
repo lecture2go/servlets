@@ -71,7 +71,6 @@ public class L2goImageBuilderServlet extends HttpServlet {
 			BufferedImage image = imageBuilder.buildImage();
 			
 			// scales the image down to the needed size
-			// scales the image down to the needed size
 			if (downscale.equalsIgnoreCase("true")) {
 				image = imageBuilder.scaleImage(image, 1024, 107);
 			}
