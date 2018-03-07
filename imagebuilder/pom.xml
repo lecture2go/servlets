@@ -1,0 +1,42 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>de.uhh.lecture2go.util</groupId>
+  <artifactId>imagebuilder</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>war</packaging>
+  <name>imagebuilder</name>
+  <build>
+	<finalName>imagebuilder</finalName>
+	<plugins>
+		  <plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-compiler-plugin</artifactId>
+			<version>3.6.1</version>
+			<inherited>true</inherited>
+			<configuration>
+			    <source>1.7</source>
+			    <target>1.7</target>
+			</configuration>
+		  </plugin>
+	  </plugins>
+  </build>
+  
+  
+  <dependencies>
+  	<dependency>
+  		<groupId>javax.servlet</groupId>
+  		<artifactId>javax.servlet-api</artifactId>
+  		<version>4.0.0-b01</version>
+  	</dependency>
+	<!-- https://mvnrepository.com/artifact/com.twelvemonkeys.imageio/imageio-core -->
+	<dependency>
+	    <groupId>com.twelvemonkeys.imageio</groupId>
+	    <artifactId>imageio-core</artifactId>
+	    <version>3.3.2</version>
+	</dependency>
+	
+  </dependencies>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+</project>
