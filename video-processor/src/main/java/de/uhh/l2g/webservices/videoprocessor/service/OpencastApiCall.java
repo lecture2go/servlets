@@ -274,6 +274,9 @@ public class OpencastApiCall {
 		processing.put("workflow", workflow);
 		Map<String, String> configuration = new HashMap<String,String>();
 		configuration.put("id",id.toString());
+		// send url of this video-processor instance for callback
+		configuration.put("url", config.getProperty("url.videoconversion"));
+	
 		processing.put("configuration",configuration);
 		
 		String processingAsJson = null;
