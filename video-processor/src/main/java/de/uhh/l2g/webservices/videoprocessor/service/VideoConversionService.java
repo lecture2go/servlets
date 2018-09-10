@@ -60,6 +60,8 @@ public class VideoConversionService {
 		// delete the last videoconversion with this sourceId
 		VideoConversion videoConversionDb = GenericDao.getInstance().getFirstByFieldValueOrderedDesc(VideoConversion.class, "sourceId", videoConversion.getSourceId(), "startTime");
 		if (videoConversionDb != null) {
+			// the last video conversion for this source id might still be running, delete it
+			OpencastApiCall.deleteEvent(videoConversionDb.getOpencastId());
 			// delete old files
 			cleanup(videoConversionDb);
 		}
@@ -77,10 +79,24 @@ public class VideoConversionService {
 		
 		// create a new opencast event via the opencast API
 		try {
+			// post event to opencast, this may take some time as the original video is transfered with this call
 			String opencastId = OpencastApiCall.postNewEventRequest(videoConversion.getSourceFilePath(), videoConversion.getFilename(), videoConversion.getId(), videoConversion.getWorkflow());
+			
+			// reload the videoConversion object to retrieve possible changes (filename or even deletion) while copying to opencast
+			videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getId());
+			
+			// save the opencast id
 			videoConversion.setOpencastId(opencastId);
-			// this status change count towards the elapsed time
-			persistVideoConversionStatus(videoConversion, VideoConversionStatus.OC_RUNNING, true);
+			GenericDao.getInstance().update(videoConversion);
+			
+			// check if original video was deleted in the meantime, if so stop the processing
+			if (videoConversion.getStatus() == VideoConversionStatus.DELETED) {
+				logger.info("The original video of the videoConversion with sourceId {} was deleted in the meantime", videoConversion.getSourceId());
+				delete();
+			} else {
+				// this status change count towards the elapsed time
+				persistVideoConversionStatus(videoConversion, VideoConversionStatus.OC_RUNNING, true);
+			}
 		} catch(BadRequestException e) {
 			persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_COPYING_TO_OC_BAD_REQUEST);
 			return null;
