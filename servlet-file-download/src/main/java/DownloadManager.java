@@ -54,25 +54,23 @@ public class DownloadManager extends HttpServlet {
 				
 				//Open an input stream to the file and post the file contents thru the 
 				//servlet output stream to the client m/c
-				
-				InputStream in = new FileInputStream(f);
-				ServletOutputStream outs = response.getOutputStream();
-					
-				int bit = 20*1024*8;
-				int i = 0;
-	
+
 			    try {
-			    	while ((bit) >= 0) {
-			    		bit = in.read();
-			    		outs.write(bit);
-			    	}
-			    }catch (IOException ioe) {
-			        ioe.printStackTrace(System.out);
+			    	InputStream in = new FileInputStream(f);
+					ServletOutputStream outs = response.getOutputStream();
+				 
+					byte[] buffer = new byte[4096];
+				         
+					int bytesRead;
+			        while ((bytesRead = in.read(buffer)) > 0) {
+			        	outs.write(buffer, 0, bytesRead);
+			        }
+				    outs.flush();
+				    outs.close();
+				    in.close();	
+			    } catch(IOException ioe) {
+			    	ioe.printStackTrace(System.out);
 			    }
-			           
-			    outs.flush();
-			    outs.close();
-			    in.close();		
 			}
 		}catch(Exception e){}	
 	}
