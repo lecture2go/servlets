@@ -5,6 +5,9 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.imageio.ImageIO;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -14,11 +17,17 @@ import javax.servlet.http.HttpServletResponse;
 public class L2goImageBuilderServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
+	private static final Map<String, String> additionalImages = new HashMap<String, String>();
+
+	
     /**
      * @see HttpServlet#HttpServlet()
      */
     public L2goImageBuilderServlet() {
         super();
+        // create the map for accessing additional images
+        additionalImages.put("l2go", "/WEB-INF/l2go_logo_trans.png");
+        additionalImages.put("campusinno", "/WEB-INF/ci_logo.png");
     }
 
 	/**
@@ -35,12 +44,18 @@ public class L2goImageBuilderServlet extends HttpServlet {
 		String date = request.getParameter("date")!=null ? request.getParameter("date") : "";		
 		String type = request.getParameter("type")!=null ? request.getParameter("type") : "";
 		String downscale = request.getParameter("downscale")!=null ? request.getParameter("downscale") : "";
+		String additionalImage = (request.getParameter("additionalimage")!=null || additionalImages.get(request.getParameter("additionalimage"))!=null) ? request.getParameter("additionalimage") : null;
 
 		
 		if (type.equals("speakerslides")) {
 			SpeakerSlidesL2goImageBuilder imageBuilder = new SpeakerSlidesL2goImageBuilder(author, institution, title, series, date);
 			InputStream backgroundimageStream = getServletContext().getResourceAsStream("/WEB-INF/generic_speaker_slides.png");
 			imageBuilder.setBackgroundimageStream(backgroundimageStream);
+			
+			if (additionalImage != null) {
+				InputStream additionalImageStream = getServletContext().getResourceAsStream(additionalImages.get(additionalImage));
+				imageBuilder.setAdditionalImageStream(additionalImageStream);
+			}
 
 			imageBuilder.setFontSize(30.0f);
 			initializeFonts(imageBuilder);
@@ -62,6 +77,15 @@ public class L2goImageBuilderServlet extends HttpServlet {
 			SpeakerOnlyL2goImageBuilder imageBuilder = new SpeakerOnlyL2goImageBuilder(author, institution, title, series, date);
 			InputStream backgroundimageStream = getServletContext().getResourceAsStream("/WEB-INF/generic_speakeronly.png");
 			imageBuilder.setBackgroundimageStream(backgroundimageStream);
+			
+			if (additionalImage != null) {
+				InputStream additionalImageStream = getServletContext().getResourceAsStream(additionalImages.get(additionalImage));
+				imageBuilder.setAdditionalImageStream(additionalImageStream);
+			} else {
+		   		// the l2go logo is used if no additional image is set 
+				InputStream additionalImageStream = getServletContext().getResourceAsStream(additionalImages.get("l2go"));
+				imageBuilder.setAdditionalImageStream(additionalImageStream);
+			}
 
 			imageBuilder.setFontSize(40.0f);
 

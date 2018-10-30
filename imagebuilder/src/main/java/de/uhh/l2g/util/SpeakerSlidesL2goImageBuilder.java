@@ -26,6 +26,9 @@ public class SpeakerSlidesL2goImageBuilder extends L2goImageBuilder {
 		this.offsetLeft = 10;
 		this.offsetRight = 10;
 		
+		// the position of the additional image if there is any
+		this.offsetLeftAdditionalImage = 450;
+		this.offsetTopAdditionalImage = 398;
 	}
 
 	/**
@@ -71,6 +74,12 @@ public class SpeakerSlidesL2goImageBuilder extends L2goImageBuilder {
     	    seriesPosition = 344;
 	  	}
 	   	this.drawString(this.g, seriesAndDate, this.offsetLeft, seriesPosition, this.maxTextWidth, 2);
+	   	
+	   	// if there is an additional Image, draw it
+	   	if (this.additionalImage != null) {
+	   		this.additionalImage = this.scaleImage(this.additionalImage, 165, 58);
+		   	this.drawAdditionalImage(this.g, this.additionalImage, this.offsetLeftAdditionalImage, this.offsetTopAdditionalImage);
+	   	}
 	   	
 	    // clean up
 	    this.g.dispose();

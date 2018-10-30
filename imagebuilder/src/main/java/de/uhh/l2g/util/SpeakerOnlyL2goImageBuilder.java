@@ -99,6 +99,17 @@ public class SpeakerOnlyL2goImageBuilder extends L2goImageBuilder {
 
 	   	this.drawString(this.g, seriesAndDate, this.offsetLeft, seriesYPosition, this.maxTextWidth, 1);
 	   	
+	   	// if there is an additional Image, draw it
+	   	if (this.additionalImage != null) {
+			// the image should be drawn in the middle position with an offset of 20 from the right side
+			int leftOffset = this.imageWidth - 20;
+			int center = this.image.getHeight()/2;
+			int x = leftOffset - this.additionalImage.getWidth();
+			int y = center - this.additionalImage.getHeight()/2;
+			
+		   	this.drawAdditionalImage(this.g, this.additionalImage, x, y);
+	   	}
+	   	
 	    // clean up
 	    this.g.dispose();
     	
