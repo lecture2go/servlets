@@ -29,6 +29,10 @@ public abstract class L2goImageBuilder {
 	// the distance from the image-border to the start of text in pixels
 	int offsetLeft;
 	int offsetRight;
+	
+	// the position of the additional image if there is any
+	int offsetLeftAdditionalImage;
+	int offsetTopAdditionalImage;
 
 	// font configuration
 	InputStream fontRegularStream;
@@ -46,6 +50,9 @@ public abstract class L2goImageBuilder {
 	// the background image used
 	InputStream backgroundimageStream;
 	
+	// additional image
+	InputStream additionalImageStream;
+	
 	// the metadata which will be written to the image
 	String author;
 	String institution;
@@ -54,6 +61,7 @@ public abstract class L2goImageBuilder {
 	String date;
 	
 	BufferedImage image;
+	BufferedImage additionalImage;
 	Graphics2D g;
 	
 	/**
@@ -82,6 +90,10 @@ public abstract class L2goImageBuilder {
 		try {
 			// load the background image on which the text will be written
 			this.image = this.loadBackgroundimage();
+			
+			if (this.additionalImageStream != null) {
+				this.additionalImage = this.loadAdditionalImage();
+			}
 	
 			// we need the graphic context
 			this.g = this.buildGraphicContextFromImage(image);
@@ -124,6 +136,16 @@ public abstract class L2goImageBuilder {
 	 */
 	public BufferedImage loadBackgroundimage() throws IOException {
 		BufferedImage image = ImageIO.read(this.backgroundimageStream);
+	    return image;
+	}
+	
+	/**
+	 * Loads the additional image from a file
+	 * @return the additional image
+	 * @throws IOException
+	 */
+	public BufferedImage loadAdditionalImage() throws IOException {
+		BufferedImage image = ImageIO.read(this.additionalImageStream);
 	    return image;
 	}
 	
@@ -196,6 +218,17 @@ public abstract class L2goImageBuilder {
             curX = x;
         }
         return linesCount;
+    }
+    
+    /**
+     * 
+     * @param g the Graphics context
+     * @param additionalImage the additional image to be drawn
+     * @param x x-coordinate of the position, where the image is drawn 
+     * @param y y-coordinate of the position, where the text is drawn
+     */
+    protected void drawAdditionalImage(Graphics g, BufferedImage additionalImage, int x, int y) {
+		g.drawImage(additionalImage, x, y, null);
     }
 
     /**
@@ -323,6 +356,22 @@ public abstract class L2goImageBuilder {
      */
     public InputStream getBackgroundimageStream() {
     	return this.backgroundimageStream;
+    }
+    
+    /**
+     * Sets the additionalimage-stream
+     * @param backgroundimagePath the additionalImage-stream
+     */
+    public void setAdditionalImageStream(InputStream additionalImageStream) {
+    	this.additionalImageStream = additionalImageStream;
+    }
+    
+    /**
+     * Gets the additionalImage-path
+     * @return the additionalImage-path
+     */
+    public InputStream getAdditionalImageStream() {
+    	return this.additionalImageStream;
     }
 
     /**
