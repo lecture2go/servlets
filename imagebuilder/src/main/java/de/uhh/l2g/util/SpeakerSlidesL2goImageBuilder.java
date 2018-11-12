@@ -62,8 +62,13 @@ public class SpeakerSlidesL2goImageBuilder extends L2goImageBuilder {
 	    this.g.setFont(this.fontItalic);
 	   	usedLines = this.drawString(this.g, this.institution, this.offsetLeft, institutionPosition, this.maxTextWidth, 2);
 
-    	// the title position is fixed
-	    titlePosition = 206;
+	   	// the title position is relative to the institution position
+        if (usedLines <= 1) {
+        	titlePosition = 206;
+        } else {
+        	titlePosition = 240;
+        }
+	    //titlePosition = 206;
 	  	this.g.setFont(this.fontRegular);
 	  	usedLines = this.drawString(this.g, this.title, this.offsetLeft, titlePosition, this.maxTextWidth, 3);
 	  	

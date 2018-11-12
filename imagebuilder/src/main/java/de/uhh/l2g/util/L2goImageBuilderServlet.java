@@ -87,7 +87,7 @@ public class L2goImageBuilderServlet extends HttpServlet {
 				imageBuilder.setAdditionalImageStream(additionalImageStream);
 			}
 
-			imageBuilder.setFontSize(40.0f);
+			imageBuilder.setFontSize(32.0f);
 
 			initializeFonts(imageBuilder);
 			

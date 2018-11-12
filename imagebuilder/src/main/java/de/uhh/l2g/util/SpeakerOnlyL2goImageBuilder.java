@@ -25,7 +25,7 @@ public class SpeakerOnlyL2goImageBuilder extends L2goImageBuilder {
 		
 		// the distance from the image-border to the start of text in pixels
 		this.offsetLeft = 440;
-		this.offsetRight = 347;
+		this.offsetRight = 240;
 	}
 
 	/**
