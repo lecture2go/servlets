@@ -24,7 +24,7 @@ import de.uhh.l2g.util.SyntaxManager;
 
 public class MultipartRequestHandler {
 
-	private static final Long MAX_SIZE = new Long("5368709120");
+	private static final Long MAX_SIZE = new Long("107374182400"); //100 TB
 
 	public static List<FileMeta> uploadByJavaServletAPI(HttpServletRequest request) throws IOException, ServletException{
 		
@@ -72,7 +72,7 @@ public class MultipartRequestHandler {
 			DiskFileItemFactory factory = new DiskFileItemFactory();
 			factory.setSizeThreshold(0);//save all to disk
 			ServletFileUpload upload = new ServletFileUpload(factory);
-			upload.setSizeMax(MAX_SIZE);//max file size 2 TB
+			upload.setSizeMax(MAX_SIZE);
 			// 2.2 Parse the request
 			try {
 				// 2.3 Get all uploaded FileItem
