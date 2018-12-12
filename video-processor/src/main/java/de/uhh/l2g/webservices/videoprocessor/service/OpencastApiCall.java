@@ -62,7 +62,7 @@ public class OpencastApiCall {
 	 * @param id the id
 	 * @return the response from the opencast API
 	 */
-	static String postNewEventRequest(String filepath, String title, Long id, String workflow) {
+	static String postNewEventRequest(String filepath, String title, Long id, String workflow, Map<String, Object> additionalProperties) {
 		// prepare the api call
 		WebTarget target = prepareApiCall(eventEndpoint);
 		
@@ -72,7 +72,8 @@ public class OpencastApiCall {
 		// create the parts necessary for the the request
 		String acl = createAclJson();
 		String metadata = createMetadataJson(title, id);
-		String processing = createProcessingJson(id, workflow);
+	
+		String processing = createProcessingJson(id, workflow, additionalProperties);
 
 		// create the multipart form data
 		FormDataMultiPart multiPart = new FormDataMultiPart();
@@ -269,13 +270,20 @@ public class OpencastApiCall {
 	 * @param workflow 
 	 * @return the processing info as as json string
 	 */
-	private static String createProcessingJson(Long id, String workflow) {
+	private static String createProcessingJson(Long id, String workflow, Map<String, Object> additionalProperties) {
 		Map<String, Object> processing = new HashMap<String,Object>();
 		processing.put("workflow", workflow);
 		Map<String, String> configuration = new HashMap<String,String>();
 		configuration.put("id",id.toString());
 		// send url of this video-processor instance for callback
 		configuration.put("url", config.getProperty("url.videoconversion"));
+		
+		// add additional properties if there are any
+		if (!additionalProperties.isEmpty()) {
+			for (Map.Entry<String, Object> additionalProperty : additionalProperties.entrySet()) {
+				configuration.put(additionalProperty.getKey(), additionalProperty.getValue().toString());
+			}
+		}
 	
 		processing.put("configuration",configuration);
 		

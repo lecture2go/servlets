@@ -2,7 +2,9 @@ package de.uhh.l2g.webservices.videoprocessor.model;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -18,18 +20,14 @@ import javax.persistence.OneToMany;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 import javax.persistence.EnumType;
-import javax.persistence.Temporal;
 import javax.persistence.Transient;
-import javax.persistence.TemporalType;
 
 import org.apache.commons.io.FilenameUtils;
-import org.hibernate.annotations.IndexColumn;
-
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-
-import de.uhh.l2g.webservices.videoprocessor.dao.GenericDao;
 
 
 /**
@@ -70,6 +68,10 @@ public class VideoConversion {
 	private String elapsedTime;
 	
 	private String workflow;
+	
+    @JsonIgnore
+    @Transient
+    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 	
 	private boolean createSmil = false;
 	
@@ -265,6 +267,22 @@ public class VideoConversion {
 	public void setWorkflow(String workflow) {
 		this.workflow = workflow;
 	}
+	
+
+	/**
+	 * @return the workflow properties
+	 */
+	/*public HashMap<String, String> getWorkflowProperties() {
+		return workflowProperties;
+	}*/
+
+	/**
+	 * @param workflow the workflow properties to set
+	 */
+	/*public void setWorkflowProperties(HashMap<String, String> workflowProperties) {
+		this.workflowProperties = workflowProperties;
+	}*/
+
 
 
 	/**
@@ -341,4 +359,14 @@ public class VideoConversion {
 		}
 		return createdVideos;
 	}
+	
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
+    }
 }
