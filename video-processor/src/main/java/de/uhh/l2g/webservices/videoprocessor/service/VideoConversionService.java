@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 
@@ -28,6 +29,7 @@ import de.uhh.l2g.webservices.videoprocessor.model.CreatedVideo;
 import de.uhh.l2g.webservices.videoprocessor.model.VideoConversion;
 import de.uhh.l2g.webservices.videoprocessor.model.VideoConversionHistoryEntry;
 import de.uhh.l2g.webservices.videoprocessor.model.VideoConversionStatus;
+import de.uhh.l2g.webservices.videoprocessor.model.opencast.Attachment;
 import de.uhh.l2g.webservices.videoprocessor.model.opencast.Medium;
 import de.uhh.l2g.webservices.videoprocessor.service.OpencastApiCall;
 import de.uhh.l2g.webservices.videoprocessor.util.Config;
@@ -92,7 +94,7 @@ public class VideoConversionService {
 			
 			// check if original video was deleted in the meantime, if so stop the processing
 			if (videoConversion.getStatus() == VideoConversionStatus.DELETED) {
-				logger.info("The original video of the videoConversion with sourceId {} was deleted in the meantimes", videoConversion.getSourceId());
+				logger.info("The original video of the videoConversion with sourceId {} was deleted in the meantime", videoConversion.getSourceId());
 				delete();
 			} else {
 				// this status change count towards the elapsed time
@@ -122,46 +124,15 @@ public class VideoConversionService {
 			// the opencast workflow was successful
 			persistVideoConversionStatus(videoConversion, VideoConversionStatus.OC_SUCCEEDED);
 			
-			// get the event details and map them to createdVideo objects
-			List<Medium> media = OpencastApiCall.getMedia(videoConversion.getOpencastId());
-			if (media.isEmpty()) {
-				// this status change count towards the elapsed time
-				persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_RETRIEVING_VIDEO_METADATA_FROM_OC, true);
+			// retrieve and handle media files from opencast
+			try {
+				retrieveAndHandleMediaFiles();
+			} catch (Exception e) {
 				return;
 			}
-		
-			// the fetched data is mapped to the model (CreatedFile or its children (CreatedVideo))
-			List<CreatedFile> createdFiles = mapMediaToCreatedFiles(media);
-
-			// download files
-			for(CreatedFile createdFile: createdFiles) {
-				// download to a temporary filename first
-				downloadFile(createdFile);
-				GenericDao.getInstance().update(createdFile);
-			}
 			
-			// reload the videoConversion object to retrieve possible filename changes while downloading
-			videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getId());
-			// as getCreatedFiles returns a set covert it to a list
-			createdFiles = new ArrayList<CreatedFile>(videoConversion.getCreatedFiles());
-			
-			for(CreatedFile createdFile: createdFiles) {
-				// rename the file to the final finalname
-				createdFile = renameFilesToFinalFilename(createdFile);
-				GenericDao.getInstance().update(createdFile);
-			}
-			
-			if (videoConversion.getCreateSmil()) {
-				// only videos are relevant for the smil file, check list to only use 
-				List<CreatedVideo> createdVideos = new ArrayList<CreatedVideo>();
-				for(CreatedFile createdFile: createdFiles) {
-					if (createdFile instanceof CreatedVideo) {
-						createdVideos.add((CreatedVideo) createdFile);
-					}
-				}
-				// build SMIL file
-				buildSmil(createdVideos);
-			}
+			// retrieve and handle thumbnail files from opencast (if there are any) / as specified in the config file
+			retrieveAndHandleThumbnailFiles();
 			
 			// delete event (and files) in opencast
 			try {
@@ -180,6 +151,8 @@ public class VideoConversionService {
 			persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_OC_FAILED, true);
 		}
 	}
+	
+
 
 	/**
 	 * Renames the file
@@ -267,6 +240,96 @@ public class VideoConversionService {
 			persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_DELETING_FROM_OC);
 		} 
 		return cleanup();
+	}
+	
+
+	/**
+	 * Does the heavy lifting: Retrieves the metadata from opencast, maps them, download the corresponding files and creates a smil file for adaptive streaming
+	 * @throws NoSuchElementException 
+	 */
+	private void retrieveAndHandleMediaFiles() throws NoSuchElementException {
+		// get the event details and map them to createdVideo objects
+		List<Medium> media = OpencastApiCall.getMedia(videoConversion.getOpencastId());
+		if (media.isEmpty()) {
+			// this status change count towards the elapsed time
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_RETRIEVING_VIDEO_METADATA_FROM_OC, true);
+			throw new NoSuchElementException();
+		}
+	
+		// the fetched data is mapped to the model (CreatedFile or its children (CreatedVideo))
+		List<CreatedFile> createdFiles = mapMediaToCreatedFiles(media);
+
+		// download files
+		for(CreatedFile createdFile: createdFiles) {
+			// download to a temporary filename first
+			downloadFile(createdFile);
+			GenericDao.getInstance().update(createdFile);
+		}
+		
+		// reload the videoConversion object to retrieve possible filename changes while downloading
+		videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getId());
+		// as getCreatedFiles returns a set covert it to a list
+		createdFiles = new ArrayList<CreatedFile>(videoConversion.getCreatedFiles());
+		
+		for(CreatedFile createdFile: createdFiles) {
+			// rename the file to the final finalname
+			createdFile = renameFilesToFinalFilename(createdFile);
+			GenericDao.getInstance().update(createdFile);
+		}
+		
+		if (videoConversion.getCreateSmil()) {
+			// only videos are relevant for the smil file, check list to only use 
+			List<CreatedVideo> createdVideos = new ArrayList<CreatedVideo>();
+			for(CreatedFile createdFile: createdFiles) {
+				if (createdFile instanceof CreatedVideo) {
+					createdVideos.add((CreatedVideo) createdFile);
+				}
+			}
+			// build SMIL file
+			buildSmil(createdVideos);
+		}
+	}
+	
+	/**
+	 * Handles different thumbnail files from opencast (thumbnails are attachements)
+	 */
+	private void retrieveAndHandleThumbnailFiles() {
+		List<Attachment> attachments = OpencastApiCall.getAttachments(videoConversion.getOpencastId());
+		// scans attachments for thumbnails and downloads them
+		if (!attachments.isEmpty()) {
+			for (Attachment attachment: attachments) {
+				if (attachment.getType().equals(Config.getInstance().getProperty("opencast.thumbnail.type.full"))) {
+					// it is a thumbnail in full size (no suffix needed), download it
+					downloadThumbnailToThumbnailFolder(attachment, "");
+				} else if (attachment.getType().equals(Config.getInstance().getProperty("opencast.thumbnail.type.medium"))) {
+					// it is a thumbnail in medium size, download it and set corresponding suffix 
+					downloadThumbnailToThumbnailFolder(attachment, Config.getInstance().getProperty("folder.thumbnails.suffix.medium"));
+				} else if (attachment.getType().equals(Config.getInstance().getProperty("opencast.thumbnail.type.small"))) {
+					// it is a thumbnail in small size, download it and set corresponding suffix 
+					downloadThumbnailToThumbnailFolder(attachment, Config.getInstance().getProperty("folder.thumbnails.suffix.small"));		
+				}
+			}
+		}
+	}
+	
+	
+	/**
+	 * Download the opencast thumbnail to the thumbnail folder
+	 * @param thumbnail the thumbnail Attachment
+	 * @param thumbnailSuffixWithoutExtension the suffix which is added to the basename
+	 */
+	private void downloadThumbnailToThumbnailFolder(Attachment thumbnail, String thumbnailSuffixWithoutExtension) {
+		CreatedFile createdFile = mapAttachmentToCreatedFile(thumbnail);
+		
+		// download to a temporary filename first
+		// the target file path consists of the image path and the original filename
+		String targetFilePath = Config.getInstance().getProperty("folder.thumbnails") + videoConversion.getFilename();
+		downloadFile(createdFile, targetFilePath);
+		
+		GenericDao.getInstance().update(createdFile);
+		// rename the file to the final name with the necessary suffix right now, as there should be not changes in this short timeframe
+		createdFile = renameFilesToFinalFilename(createdFile, thumbnailSuffixWithoutExtension, Config.getInstance().getProperty("folder.thumbnails"));
+		GenericDao.getInstance().update(createdFile);
 	}
 
 	/**
@@ -449,6 +512,51 @@ public class VideoConversionService {
 	}
 	
 	/**
+	 * This maps the resulted object of the events/{id}/asset/attachment endpoint to the createdFile object
+	 * @param attachments the attachments from the oc endpoint
+	 * @return a list of createdFiles
+	 */
+	private CreatedFile mapAttachmentToCreatedFile(Attachment attachment) {
+		CreatedFile createdFile = new CreatedFile();
+		// set reference to videoConversion object
+		createdFile.setVideoConversion(videoConversion);
+		// map
+		createdFile.setRemotePath(attachment.getUrl());
+		
+		// persist created file
+		GenericDao.getInstance().save(createdFile);
+		
+		
+		return createdFile;
+	}
+	
+	/**
+	 * This maps the resulted object of the events/{id}/asset/attachment endpoint to the createdFile object
+	 * @param attachments the attachments from the oc endpoint
+	 * @return a list of createdFiles
+	 */
+	/*private List<CreatedFile> mapAllAttachmentsToCreatedFiles(List<Attachment> attachments) {
+		List<CreatedFile> createdFiles = new ArrayList<CreatedFile>();
+		for(Attachment attachment: attachments) {
+				CreatedFile createdFile = new CreatedFile();
+				// set reference to videoConversion object
+				createdFile.setVideoConversion(videoConversion);
+				// map
+				createdFile.setRemotePath(attachment.getUrl());
+				
+				// persist created file
+				GenericDao.getInstance().save(createdFile);
+				
+				// add video to list of videos
+				createdFiles.add(createdFile);
+			}
+		return createdFiles;
+	}*/
+	
+	
+	
+	
+	/**
 	 * This maps the resulted object of the events/{id}/publication endpoint to the createdVideo object
 	 * @param publication the videos from the oc endpoint
 	 * @return a list of createdVideo
@@ -487,19 +595,29 @@ public class VideoConversionService {
 	 * @param createdFile the createdFile which will be downloaded
 	 */
 	private CreatedFile downloadFile(CreatedFile createdFile) {
+		return downloadFile(createdFile, null);
+	}
+	
+	/**
+	 * This downloads a file from opencast to a temporary filename
+	 * @param createdFile the createdFile which will be downloaded
+	 */
+	private CreatedFile downloadFile(CreatedFile createdFile, String targetFilePath) {
 		String sourceFilePath = videoConversion.getSourceFilePath();
 
 		persistVideoConversionStatus(videoConversion, VideoConversionStatus.COPYING_FROM_OC);
 
 		// if no target-directory is specified, save the source-path as the target-directory
-		String targetFilePath;
+		//String targetFilePath;
 		if (videoConversion.getTargetDirectory() == null) {
 			videoConversion.setTargetDirectory(FilenameUtils.getFullPath(sourceFilePath));
 			GenericDao.getInstance().update(videoConversion);
 		}
 		
 		// the full path where the file will be written (will be modified in the next steps)
-		targetFilePath = videoConversion.getTargetFilePath();
+		if (targetFilePath == null) {
+			targetFilePath = videoConversion.getTargetFilePath();
+		}
 		
 		// replace with original extension
 		String remoteFileExtension = FilenameUtils.getExtension(createdFile.getRemotePath());
@@ -531,14 +649,22 @@ public class VideoConversionService {
 	/**
 	 * Renames the file in the file system and database
 	 * @param createdFile
+	 * @param suffixWithoutExtension
+	 * @param targetPath
 	 */
-	private CreatedFile renameFilesToFinalFilename(CreatedFile createdFile) {
+	private CreatedFile renameFilesToFinalFilename(CreatedFile createdFile, String suffixWithoutExtension, String targetPath) {
 		// check if file is a video
 		String targetFilePath;
 		if (createdFile instanceof CreatedVideo) {
 			targetFilePath = FilenameHandler.addToBasename(videoConversion.getTargetFilePath(), "_" + ((CreatedVideo) createdFile).getWidth());
 		} else {
-			targetFilePath = videoConversion.getTargetFilePath();
+			if (targetPath == null) {
+				targetFilePath = videoConversion.getTargetFilePath();
+			} else {
+				targetFilePath = targetPath + videoConversion.getFilename();
+			}
+			// add the suffix to the basename (e.g. _m for thumbnails)
+			targetFilePath = FilenameHandler.addToBasename(targetFilePath, suffixWithoutExtension);
 			targetFilePath = FilenameHandler.switchExtension(targetFilePath, FilenameUtils.getExtension(createdFile.getFilename()));
 		}
 		logger.info("Renaming File for videoConversion with sourceId {} from {} to {} (path: {})", videoConversion.getSourceId(), createdFile.getFilename(), FilenameUtils.getName(targetFilePath), targetFilePath);
@@ -559,6 +685,14 @@ public class VideoConversionService {
 		createdFile.setFilePath(targetFilePath);
 		
 		return createdFile;
+	}
+	
+	/**
+	 * Renames the file in the file system and database
+	 * @param createdFile
+	 */
+	private CreatedFile renameFilesToFinalFilename(CreatedFile createdFile) {
+		return renameFilesToFinalFilename(createdFile, "", null);
 	}
 		
 	

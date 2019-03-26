@@ -35,6 +35,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.uhh.l2g.webservices.videoprocessor.model.opencast.publication.Publication;
+import de.uhh.l2g.webservices.videoprocessor.model.opencast.Attachment;
 import de.uhh.l2g.webservices.videoprocessor.model.opencast.Medium;
 import de.uhh.l2g.webservices.videoprocessor.util.Config;
 
@@ -72,7 +73,6 @@ public class OpencastApiCall {
 		// create the parts necessary for the the request
 		String acl = createAclJson();
 		String metadata = createMetadataJson(title, id);
-	
 		String processing = createProcessingJson(id, workflow, additionalProperties);
 
 		// create the multipart form data
@@ -134,6 +134,20 @@ public class OpencastApiCall {
 		List<Medium> media = target.request(MediaType.APPLICATION_JSON_TYPE).get(new GenericType<List<Medium>>() {});
 		
 		return media;
+	}
+	
+	/**
+	 * Gets a list of ments for an opencast-Id from the opencast event endpoint
+	 * @param opencastEventId the opencastEventId whose attachments are extracted
+	 * @return a list of attachment objects
+	 */
+	public static List<Attachment> getAttachments(String opencastEventId) {
+		String attachmentEndpoint = eventEndpoint + "/" + opencastEventId + "/asset/attachment/attachments.json";
+		WebTarget target = prepareApiCall(attachmentEndpoint);
+		
+		List<Attachment> attachments = target.request(MediaType.APPLICATION_JSON_TYPE).get(new GenericType<List<Attachment>>() {});
+		
+		return attachments;
 	}
 	
 	
