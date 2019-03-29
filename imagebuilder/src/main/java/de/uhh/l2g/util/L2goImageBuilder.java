@@ -275,6 +275,44 @@ public abstract class L2goImageBuilder {
     /**
      * Resizes an image
      * uses external library (twelvemonkeys imageio)
+     * uses original aspect ratio and targetHeight as input
+     * @param img the image file
+     * @param targetHeight the final height
+     * @return
+     */
+    public BufferedImage scaleImageKeepAspectRatioFromTargetHeight(BufferedImage img, int targetHeight) {
+    	// calculate the target width from the target height
+    	double imageHeight = (double) img.getHeight();
+    	double imageWidth = (double) img.getWidth();
+
+    	double targetWidthDouble = targetHeight * (imageWidth/imageHeight);
+    	int targetWidth = (int) Math.round(targetWidthDouble);
+    	
+    	return scaleImage(img, targetWidth, targetHeight);
+    }
+    
+    /**
+     * Resizes an image
+     * uses external library (twelvemonkeys imageio)
+     * uses original aspect ratio and targetHeight as input
+     * @param img the image file
+     * @param targetHeight the final height
+     * @return
+     */
+    public BufferedImage scaleImageKeepAspectRatioFromTargetWidth(BufferedImage img, int targetWidth) {
+    	// calculate the target height from the target width
+    	double imageHeight = (double) img.getHeight();
+    	double imageWidth = (double) img.getWidth();
+
+    	double targetHeightDouble = targetWidth * (imageHeight/imageWidth);
+    	int targetHeight = (int) Math.round(targetHeightDouble);
+    	
+    	return scaleImage(img, targetWidth, targetHeight);
+    }
+    
+    /**
+     * Resizes an image
+     * uses external library (twelvemonkeys imageio)
      * @param img the image file
      * @param targetWidth the final width
      * @param targetHeight the final height
