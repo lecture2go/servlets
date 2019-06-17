@@ -45,7 +45,9 @@ public class L2goImageBuilderServlet extends HttpServlet {
 		String type = request.getParameter("type")!=null ? request.getParameter("type") : "";
 		String downscale = request.getParameter("downscale")!=null ? request.getParameter("downscale") : "";
 		String additionalImage = (request.getParameter("additionalimage")!=null || additionalImages.get(request.getParameter("additionalimage"))!=null) ? request.getParameter("additionalimage") : null;
-
+		String targetHeightString = request.getParameter("targetheight")!=null ? request.getParameter("targetheight") : "";
+		String targetWidthString = request.getParameter("targetwidth")!=null ? request.getParameter("targetwidth") : "";
+		String targetScaleFactorString = request.getParameter("targetscalefactor")!=null ? request.getParameter("targetscalefactor") : "";
 		
 		if (type.equals("speakerslides")) {
 			SpeakerSlidesL2goImageBuilder imageBuilder = new SpeakerSlidesL2goImageBuilder(author, institution, title, series, date);
@@ -63,10 +65,17 @@ public class L2goImageBuilderServlet extends HttpServlet {
 			// builds a large image with the given data
 			BufferedImage image = imageBuilder.buildImage();
 		
-			// scales the image down to the needed size
+			// scales the image down to the fixed size (keep for backward compatibility) 
 			if (downscale.equalsIgnoreCase("true")) {
 				image = imageBuilder.scaleImage(image, 320, 240);
+			} else {
+				// the newer more flexible scaling method
+				// scale the image 
+				if (!targetWidthString.equals("") || !targetHeightString.equals("")) {
+					image = scaleImageAccordingToScaleParameters(imageBuilder, image, targetWidthString, targetHeightString, targetScaleFactorString);
+				}
 			}
+			
 			// the old (manual) scaling method is disabled
 			//BufferedImage scaledImage = imageBuilder.scaleImage(image, 320, 240, RenderingHints.VALUE_INTERPOLATION_BICUBIC, true);
 			
@@ -94,16 +103,61 @@ public class L2goImageBuilderServlet extends HttpServlet {
 			// builds a large image with the given data
 			BufferedImage image = imageBuilder.buildImage();
 			
-			// scales the image down to the needed size
+			// scales the image down to the fixed size (keep for backward compatibility) 
 			if (downscale.equalsIgnoreCase("true")) {
 				image = imageBuilder.scaleImage(image, 1024, 107);
+			} else {
+				// the newer more flexible scaling method
+				// scale the image 
+				if (!targetWidthString.equals("") || !targetHeightString.equals("")) {
+					image = scaleImageAccordingToScaleParameters(imageBuilder, image, targetWidthString, targetHeightString, targetScaleFactorString);
+				}
 			}
+			
 			// the old (manual) scaling method is disabled
 			//BufferedImage scaledImage = imageBuilder.scaleImage(image, 1024, 107, RenderingHints.VALUE_INTERPOLATION_BILINEAR, true);
 			
 			// finally write the image to the browser as PNG file
 			ImageIO.write(image, "png", response.getOutputStream());
 		} 
+	}
+	
+	private BufferedImage scaleImageAccordingToScaleParameters(L2goImageBuilder imageBuilder, BufferedImage image, String targetWidthString, String targetHeightString, String targetScaleFactorString) {
+		// targetHeightString is used, use this as target height (with possible scaling)
+		if (!targetHeightString.equals("") && targetWidthString.equals("") ) {
+			int targetHeightScaled = calculateTargetSize(targetHeightString,targetScaleFactorString);
+			image = imageBuilder.scaleImageKeepAspectRatioFromTargetHeight(image, targetHeightScaled);
+		}
+		// targetWidthString is used, use this as target width (with possible scaling)
+		if (targetHeightString.equals("") && !targetWidthString.equals("") ) {
+			int targetWidthScaled = calculateTargetSize(targetWidthString,targetScaleFactorString);
+			image = imageBuilder.scaleImageKeepAspectRatioFromTargetWidth(image, targetWidthScaled);
+		}
+		// both targetWidthString and targetHeightString are used, use this as target width and height(with possible scaling)
+		if (!targetHeightString.equals("") && !targetWidthString.equals("") ) {
+			int targetHeightScaled = calculateTargetSize(targetHeightString,targetScaleFactorString);
+			int targetWidthScaled = calculateTargetSize(targetWidthString,targetScaleFactorString);
+			image = imageBuilder.scaleImage(image, targetWidthScaled, targetHeightScaled);
+		}
+		return image;
+	}
+	
+	private int calculateTargetSize(String numberString, String scaleFactorString) {
+		Long number = Long.parseLong(numberString);
+		int scaledNumber;
+		if(scaleFactorString.equals("")) {
+			// no scaling needed
+			scaledNumber = (int) (long) number;
+		} else {
+			// scale
+			scaledNumber = multiplyAndRoundToInt(number, Double.parseDouble(scaleFactorString));
+		}
+		return scaledNumber;
+	}
+	
+	private int multiplyAndRoundToInt(Long number,Double scaleFactor) {
+		Double multipliedNumber = number * scaleFactor;
+		return (int) Math.round(multipliedNumber);
 	}
 	
 	/**
