@@ -71,6 +71,15 @@ public class MultipartRequestHandler {
 			// 2.1 instantiate Apache FileUpload classes
 			DiskFileItemFactory factory = new DiskFileItemFactory();
 			factory.setSizeThreshold(0);//save all to disk
+			
+			// set the upload temp directory to the repository to minimize file movement after upload
+			// repository needs to be transmitted by a custom "X-repository"-http-header
+			if (request.getHeader("X-repository") != null) {
+				String tempRepositoryString = request.getHeader("X-repository");
+				File tempRepository = new File(tempRepositoryString);
+				factory.setRepository(tempRepository);
+			}
+			
 			ServletFileUpload upload = new ServletFileUpload(factory);
 			upload.setSizeMax(MAX_SIZE);
 			// 2.2 Parse the request
