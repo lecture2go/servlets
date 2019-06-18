@@ -72,12 +72,12 @@ public class MultipartRequestHandler {
 			DiskFileItemFactory factory = new DiskFileItemFactory();
 			factory.setSizeThreshold(0);//save all to disk
 			
-			// set the upload temp directory to the repository to minimize file movement after upload
-			// repository needs to be transmitted by a custom "X-repository"-http-header
-			if (request.getHeader("X-repository") != null) {
-				String tempRepositoryString = request.getHeader("X-repository");
-				File tempRepository = new File(tempRepositoryString);
-				factory.setRepository(tempRepository);
+			// set the upload temp directory, should be set to the target folder to minimize file movement after upload
+			// temporary directory needs to be transmitted by a custom "X-tempdir"-http-header
+			if (request.getHeader("X-tempdir") != null) {
+				String tempDirString = request.getHeader("X-tempdir");
+				File tempDir = new File(tempDirString);
+				factory.setRepository(tempDir);
 			}
 			
 			ServletFileUpload upload = new ServletFileUpload(factory);
