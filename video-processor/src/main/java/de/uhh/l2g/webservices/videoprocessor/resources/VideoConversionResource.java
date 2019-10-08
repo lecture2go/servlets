@@ -1,7 +1,10 @@
 package de.uhh.l2g.webservices.videoprocessor.resources;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -33,11 +36,18 @@ import de.uhh.l2g.webservices.videoprocessor.service.VideoConversionService;
 //@Secured
 public class VideoConversionResource {
 	protected VideoConversion videoConversion;
+	protected String tenant;
 	
 	public VideoConversionResource() {
 	}
 	
 	public VideoConversionResource(Long id) {
+		videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
+	}
+	
+	public VideoConversionResource(Long id, String tenant) {
+		this.tenant = tenant;
+		// get the videoConversion by id (ignore the tenant for now as we must allow tenant-independent communication for a PUT request (see putVideoConversionFormData))
 		videoConversion = GenericDao.getInstance().get(VideoConversion.class, id);
 	}
 	
@@ -49,7 +59,8 @@ public class VideoConversionResource {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public VideoConversion getVideoConversion() {
-		if (videoConversion == null) {
+		// check if video conversion does not exist or tenant is incorrect
+		if (videoConversion == null || !Objects.equals(videoConversion.getTenant(),tenant)) {
 			// the default ExceptionMapper takes care of the correct header status code
             throw new NotFoundException();
 		}
@@ -68,6 +79,10 @@ public class VideoConversionResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response postFilenameForVideoConversion(HashMap<String,String> filenameMap) {
+		// check if tenant is incorrect
+		if (!Objects.equals(videoConversion.getTenant(),tenant)) {
+            throw new NotFoundException();
+		}
 		VideoConversionService vc = new VideoConversionService(videoConversion);
 		if (vc.handleRenameRequest(filenameMap.get("sourceFileName"))) {
 			return Response.ok().build();
@@ -97,6 +112,10 @@ public class VideoConversionResource {
      */
 	@DELETE
 	public Response deleteVideoConversion() {
+		// check if tenant is incorrect
+		if (!Objects.equals(videoConversion.getTenant(),tenant)) {
+            throw new NotFoundException();
+		}
 		VideoConversionService vc = new VideoConversionService(videoConversion);
 		if (vc.delete()) {
 			return Response.ok().build();

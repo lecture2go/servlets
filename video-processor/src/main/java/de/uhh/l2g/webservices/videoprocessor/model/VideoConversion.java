@@ -45,6 +45,9 @@ public class VideoConversion {
 	
 	@Column(updatable = false)
 	private Long sourceId;
+	
+	@Column(updatable = false)
+	private String tenant;
 
 	private String opencastId;
 
@@ -135,6 +138,20 @@ public class VideoConversion {
 	 */
 	public void setSourceId(Long sourceId) {
 		this.sourceId = sourceId;
+	}
+
+	/**
+	 * @return the tenant
+	 */
+	public String getTenant() {
+		return tenant;
+	}
+
+	/**
+	 * @param tenant the tanant to set
+	 */
+	public void setTenant(String tenant) {
+		this.tenant = tenant;
 	}
 
 	/**

@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
@@ -57,11 +59,15 @@ public class VideoConversionService {
 	 */
 	public VideoConversion runVideoConversion() {		
 
-		logger.info("A new videoConversion is started for the sourceId {}", videoConversion.getSourceId());
+		logger.info("A new videoConversion is started for the sourceId {} and tenant {}", videoConversion.getSourceId(), videoConversion.getTenant());
 		logger.info("Additional properties are set {}", videoConversion.getAdditionalProperties().toString());
 		
-		// delete the last videoconversion with this sourceId
-		VideoConversion videoConversionDb = GenericDao.getInstance().getFirstByFieldValueOrderedDesc(VideoConversion.class, "sourceId", videoConversion.getSourceId(), "startTime");
+		// delete the last videoconversion with this sourceId and tenant
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("sourceId", videoConversion.getSourceId());
+		map.put("tenant", videoConversion.getTenant());
+		VideoConversion videoConversionDb = GenericDao.getInstance().getFirstByMultipleFieldsValuesOrderedDesc(VideoConversion.class, map, "startTime");
+
 		if (videoConversionDb != null) {
 			// the last video conversion for this source id might still be running, delete it
 			OpencastApiCall.deleteEvent(videoConversionDb.getOpencastId());
@@ -94,7 +100,7 @@ public class VideoConversionService {
 			
 			// check if original video was deleted in the meantime, if so stop the processing
 			if (videoConversion.getStatus() == VideoConversionStatus.DELETED) {
-				logger.info("The original video of the videoConversion with sourceId {} was deleted in the meantime", videoConversion.getSourceId());
+				logger.info("The original video of the videoConversion with sourceId {} and tenant {} was deleted in the meantime", videoConversion.getSourceId(), videoConversion.getTenant());
 				delete();
 			} else {
 				// this status change count towards the elapsed time
@@ -161,7 +167,7 @@ public class VideoConversionService {
 	 * @param filename
 	 */
 	public boolean handleRenameRequest(String filename) {
-		logger.info("Renaming Files for videoConversion with id: {} / sourceId: {} to {}", videoConversion.getId(), videoConversion.getSourceId(), filename);
+		logger.info("Renaming Files for videoConversion with id: {} / sourceId: {} / tenant: {} to {}", videoConversion.getId(), videoConversion.getSourceId(), videoConversion.getTenant(), filename);
 
 		// this is the old filename without extension, which provides the foundation for the renaming
 		String oldBaseFilename = FilenameUtils.getBaseName(videoConversion.getFilename());
@@ -182,7 +188,7 @@ public class VideoConversionService {
 			for (CreatedFile createdFile: createdFiles) {
 				// the old SMIL file will be deleted as it is now outdated
 				if (createdFile.getFilename().toLowerCase().endsWith("smil")) {
-					logger.info("Delete old SMIL file for videoConversion with id: {} / sourceId: {} and id of createdFile {}", videoConversion.getId(), videoConversion.getSourceId(), createdFile.getId());
+					logger.info("Delete old SMIL file for videoConversion with id: {} / sourceId: {} / tenant: {} and id of createdFile {}", videoConversion.getId(), videoConversion.getSourceId(), videoConversion.getTenant(), createdFile.getId());
 					// delete file
 					FileHandler.deleteIfExists(createdFile.getFilePath());
 					// delete from database
@@ -229,7 +235,7 @@ public class VideoConversionService {
 	 * @return 
 	 */
 	public boolean delete() {
-		logger.info("Delete Everything for videoConversion with id: {} / sourceId: {}", videoConversion.getId(), videoConversion.getSourceId());
+		logger.info("Delete Everything for videoConversion with id: {} / sourceId: {} / tenant: {}", videoConversion.getId(), videoConversion.getSourceId(), videoConversion.getTenant());
 		// delete event (and files) in opencast
 		try {
 			OpencastApiCall.deleteEvent(videoConversion.getOpencastId());
