@@ -69,10 +69,8 @@ public class VideoConversionService {
 		VideoConversion videoConversionDb = GenericDao.getInstance().getFirstByMultipleFieldsValuesOrderedDesc(VideoConversion.class, map, "startTime");
 
 		if (videoConversionDb != null) {
-			// the last video conversion for this source id might still be running, delete it
+			// the last video conversion for this source id and tenant might still be running, delete it (files will be deleted after new conversion finishes)
 			OpencastApiCall.deleteEvent(videoConversionDb.getOpencastId());
-			// delete old files
-			cleanup(videoConversionDb);
 		}
 		
 		// persist a new videoConversion object
@@ -127,6 +125,9 @@ public class VideoConversionService {
 	public void handleOpencastResponse(Boolean success) {
 		logger.info("Opencast has sent a http-notify for videoConversion with id: {} / sourceId: {} with the result: {}", videoConversion.getId(), videoConversion.getSourceId(), Boolean.toString(success));
 		if (success) {
+			// delete older video conversion for this sourceid and same tenant as current videoconversion
+			deleteOlderVideoConversions(true);
+			
 			// the opencast workflow was successful
 			persistVideoConversionStatus(videoConversion, VideoConversionStatus.OC_SUCCEEDED);
 			
@@ -730,5 +731,22 @@ public class VideoConversionService {
 		
 		GenericDao.getInstance().update(videoConversion);
 		logger.info("The new status of the videoConversion with id: {} / source id: {} is {}", videoConversion.getId(), videoConversion.getSourceId(), status);
+	}
+	
+	/**
+	 * Deletes alls older video conversion for the same sourceId and tenant as the current videoconversion
+	 * @param exceptNewest exclude the newest from deleting
+	 */
+	private void deleteOlderVideoConversions(boolean exceptNewest) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("sourceId", videoConversion.getSourceId());
+		map.put("tenant", videoConversion.getTenant());
+		List<VideoConversion> videoConversions = GenericDao.getInstance().getByMultipleFieldsValuesOrderedDesc(VideoConversion.class, map, "startTime");
+		// remove the current videoconversion from the list, we don't need to delete anything from this
+		if (exceptNewest)
+			videoConversions.remove(0);
+		for (VideoConversion olderVideoConversion: videoConversions) {
+			cleanup(olderVideoConversion);
+		}
 	}
 }
