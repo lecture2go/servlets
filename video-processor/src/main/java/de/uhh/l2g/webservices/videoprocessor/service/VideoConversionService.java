@@ -331,13 +331,20 @@ public class VideoConversionService {
 		
 		// download to a temporary filename first
 		// the target file path consists of the image path and the original filename
-		String targetFilePath = Config.getInstance().getProperty("folder.thumbnails") + videoConversion.getFilename();
+		String targetFilePath = FilenameUtils.concat(getThumbnailDirectory(), videoConversion.getFilename());
 		downloadFile(createdFile, targetFilePath);
 		
 		GenericDao.getInstance().update(createdFile);
 		// rename the file to the final name with the necessary suffix right now, as there should be not changes in this short timeframe
-		createdFile = renameFilesToFinalFilename(createdFile, thumbnailSuffixWithoutExtension, Config.getInstance().getProperty("folder.thumbnails"));
+		createdFile = renameFilesToFinalFilename(createdFile, thumbnailSuffixWithoutExtension, getThumbnailDirectory());
 		GenericDao.getInstance().update(createdFile);
+	}
+	
+	/**
+	 * @return the thumbnail directory from request or config as fallback
+	 */
+	private String getThumbnailDirectory() {
+		return videoConversion.getTargetThumbnailDirectory() != null ? videoConversion.getTargetThumbnailDirectory() : Config.getInstance().getProperty("folder.thumbnails");
 	}
 
 	/**
@@ -669,7 +676,7 @@ public class VideoConversionService {
 			if (targetPath == null) {
 				targetFilePath = videoConversion.getTargetFilePath();
 			} else {
-				targetFilePath = targetPath + videoConversion.getFilename();
+				targetFilePath = FilenameUtils.concat(targetPath, videoConversion.getFilename());
 			}
 			// add the suffix to the basename (e.g. _m for thumbnails)
 			targetFilePath = FilenameHandler.addToBasename(targetFilePath, suffixWithoutExtension);

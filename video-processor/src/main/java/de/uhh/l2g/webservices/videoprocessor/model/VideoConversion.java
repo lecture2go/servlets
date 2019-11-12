@@ -55,6 +55,8 @@ public class VideoConversion {
 	
 	private String targetDirectory;
 	
+	private String targetThumbnailDirectory;
+
 	@Transient
 	private String targetFilePath;
 	
@@ -189,12 +191,25 @@ public class VideoConversion {
 		return targetDirectory;
 	}
 
-
 	/**
 	 * @param targetDirectory the targetDirectory to set
 	 */
 	public void setTargetFilePath(String targetFilePath) {
 		this.targetDirectory = FilenameUtils.getFullPath(targetFilePath);
+	}
+	
+	/**
+	 * @return the getTargetThumbnailDirectory
+	 */
+	public String getTargetThumbnailDirectory() {
+		return targetThumbnailDirectory;
+	}
+
+	/**
+	 * @param targetThumbnailDirectory the targetThumbnailDirectory to set
+	 */
+	public void setTargetThumbnailDirectory(String targetThumbnailDirectory) {
+		this.targetThumbnailDirectory = targetThumbnailDirectory;
 	}
 	
 	/**
