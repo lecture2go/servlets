@@ -66,12 +66,10 @@ public class VideoConversionService {
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("sourceId", videoConversion.getSourceId());
 		map.put("tenant", videoConversion.getTenant());
-		VideoConversion videoConversionDb = GenericDao.getInstance().getFirstByMultipleFieldsValuesOrderedDesc(VideoConversion.class, map, "startTime");
-
-		if (videoConversionDb != null) {
-			// the last video conversion for this source id and tenant might still be running, delete it (files will be deleted after new conversion finishes)
-			OpencastApiCall.deleteEvent(videoConversionDb.getOpencastId());
-		}
+	
+		// previous video conversions for this source id and tenant might still be running, delete it (files will be deleted after new conversion finishes)
+		deleteOldEventsFromOpencast(false);
+		
 		
 		// persist a new videoConversion object
 		videoConversion = GenericDao.getInstance().save(videoConversion);
@@ -88,7 +86,10 @@ public class VideoConversionService {
 		try {
 			// post event to opencast, this may take some time as the original video is transfered with this call
 			String opencastId = OpencastApiCall.postNewEventRequest(videoConversion.getSourceFilePath(), videoConversion.getFilename(), videoConversion.getId(), videoConversion.getWorkflow(), videoConversion.getAdditionalProperties());
-
+			
+			// if the older video conversion were not deleted from opencast (see above), because they were copied at the same time, try to delete them again
+			deleteOldEventsFromOpencast(true);
+			
 			// reload the videoConversion object to retrieve possible changes (filename or even deletion) while copying to opencast
 			videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getId());
 			
@@ -731,6 +732,37 @@ public class VideoConversionService {
 		
 		GenericDao.getInstance().update(videoConversion);
 		logger.info("The new status of the videoConversion with id: {} / source id: {} is {}", videoConversion.getId(), videoConversion.getSourceId(), status);
+	}
+	
+	/**
+	 * Returns alls older video conversion for the same sourceId and tenant as the current videoconversion
+	 * @param exceptNewest exclude the newest (current) videoConversion
+	 */
+	private List<VideoConversion> getOlderVideoConversions(boolean exceptNewest) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("sourceId", videoConversion.getSourceId());
+		map.put("tenant", videoConversion.getTenant());
+		List<VideoConversion> videoConversions = GenericDao.getInstance().getByMultipleFieldsValuesOrderedDesc(VideoConversion.class, map, "startTime");
+		// remove the current videoconversion from the list, we don't need to delete anything from this
+		if (exceptNewest)
+			videoConversions.remove(0);
+		
+		return videoConversions;
+	}
+	
+	/**
+	 * Deletes older events from opencast  for the same sourceId and tenant as the current videoconversion
+	 * @param exceptNewest exclude the newest/ current videoconversion from deleting
+	 */
+	private void deleteOldEventsFromOpencast(boolean exceptNewest) {
+		// get all video conversion but the new one
+		List<VideoConversion> oldVideoConversions = getOlderVideoConversions(exceptNewest);
+		
+		if (!oldVideoConversions.isEmpty()) {
+			for (VideoConversion oldVideoConversion: oldVideoConversions) {
+				OpencastApiCall.deleteEvent(oldVideoConversion.getOpencastId());
+			}
+		}
 	}
 	
 	/**
