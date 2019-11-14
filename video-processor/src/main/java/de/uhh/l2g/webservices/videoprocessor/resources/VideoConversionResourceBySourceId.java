@@ -1,5 +1,10 @@
 package de.uhh.l2g.webservices.videoprocessor.resources;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.ws.rs.NotFoundException;
+
 import de.uhh.l2g.webservices.videoprocessor.dao.GenericDao;
 import de.uhh.l2g.webservices.videoprocessor.filter.BasicAuthenticationFilter.Secured;
 import de.uhh.l2g.webservices.videoprocessor.filter.LoggingFilter.Logged;
@@ -13,8 +18,16 @@ import de.uhh.l2g.webservices.videoprocessor.model.VideoConversion;
 @Logged
 //@Secured
 public class VideoConversionResourceBySourceId extends VideoConversionResource {
-
-	public VideoConversionResourceBySourceId(Long sourceId) {
-		videoConversion = GenericDao.getInstance().getFirstByFieldValueOrderedDesc(VideoConversion.class, "sourceId",  sourceId, "startTime");
+	
+	public VideoConversionResourceBySourceId(Long sourceId, String tenant) {
+		this.tenant = tenant;
+		// get video conversion by source ID and tenant
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("sourceId", sourceId);
+		map.put("tenant", tenant);
+		videoConversion = GenericDao.getInstance().getFirstByMultipleFieldsValuesOrderedDesc(VideoConversion.class, map, "startTime");
+		if (videoConversion == null) {
+            throw new NotFoundException();
+		}
 	}
 }

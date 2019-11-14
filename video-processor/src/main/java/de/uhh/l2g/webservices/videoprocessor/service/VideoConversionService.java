@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
@@ -57,17 +59,17 @@ public class VideoConversionService {
 	 */
 	public VideoConversion runVideoConversion() {		
 
-		logger.info("A new videoConversion is started for the sourceId {}", videoConversion.getSourceId());
+		logger.info("A new videoConversion is started for the sourceId {} and tenant {}", videoConversion.getSourceId(), videoConversion.getTenant());
 		logger.info("Additional properties are set {}", videoConversion.getAdditionalProperties().toString());
 		
-		// delete the last videoconversion with this sourceId
-		VideoConversion videoConversionDb = GenericDao.getInstance().getFirstByFieldValueOrderedDesc(VideoConversion.class, "sourceId", videoConversion.getSourceId(), "startTime");
-		if (videoConversionDb != null) {
-			// the last video conversion for this source id might still be running, delete it
-			OpencastApiCall.deleteEvent(videoConversionDb.getOpencastId());
-			// delete old files
-			cleanup(videoConversionDb);
-		}
+		// delete the last videoconversion with this sourceId and tenant
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("sourceId", videoConversion.getSourceId());
+		map.put("tenant", videoConversion.getTenant());
+	
+		// previous video conversions for this source id and tenant might still be running, delete it (files will be deleted after new conversion finishes)
+		deleteOldEventsFromOpencast(false);
+		
 		
 		// persist a new videoConversion object
 		videoConversion = GenericDao.getInstance().save(videoConversion);
@@ -84,7 +86,10 @@ public class VideoConversionService {
 		try {
 			// post event to opencast, this may take some time as the original video is transfered with this call
 			String opencastId = OpencastApiCall.postNewEventRequest(videoConversion.getSourceFilePath(), videoConversion.getFilename(), videoConversion.getId(), videoConversion.getWorkflow(), videoConversion.getAdditionalProperties());
-
+			
+			// if the older video conversion were not deleted from opencast (see above), because they were copied at the same time, try to delete them again
+			deleteOldEventsFromOpencast(true);
+			
 			// reload the videoConversion object to retrieve possible changes (filename or even deletion) while copying to opencast
 			videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getId());
 			
@@ -94,7 +99,7 @@ public class VideoConversionService {
 			
 			// check if original video was deleted in the meantime, if so stop the processing
 			if (videoConversion.getStatus() == VideoConversionStatus.DELETED) {
-				logger.info("The original video of the videoConversion with sourceId {} was deleted in the meantime", videoConversion.getSourceId());
+				logger.info("The original video of the videoConversion with sourceId {} and tenant {} was deleted in the meantime", videoConversion.getSourceId(), videoConversion.getTenant());
 				delete();
 			} else {
 				// this status change count towards the elapsed time
@@ -121,6 +126,9 @@ public class VideoConversionService {
 	public void handleOpencastResponse(Boolean success) {
 		logger.info("Opencast has sent a http-notify for videoConversion with id: {} / sourceId: {} with the result: {}", videoConversion.getId(), videoConversion.getSourceId(), Boolean.toString(success));
 		if (success) {
+			// delete older video conversion for this sourceid and same tenant as current videoconversion
+			deleteOlderVideoConversions(true);
+			
 			// the opencast workflow was successful
 			persistVideoConversionStatus(videoConversion, VideoConversionStatus.OC_SUCCEEDED);
 			
@@ -161,7 +169,7 @@ public class VideoConversionService {
 	 * @param filename
 	 */
 	public boolean handleRenameRequest(String filename) {
-		logger.info("Renaming Files for videoConversion with id: {} / sourceId: {} to {}", videoConversion.getId(), videoConversion.getSourceId(), filename);
+		logger.info("Renaming Files for videoConversion with id: {} / sourceId: {} / tenant: {} to {}", videoConversion.getId(), videoConversion.getSourceId(), videoConversion.getTenant(), filename);
 
 		// this is the old filename without extension, which provides the foundation for the renaming
 		String oldBaseFilename = FilenameUtils.getBaseName(videoConversion.getFilename());
@@ -182,7 +190,7 @@ public class VideoConversionService {
 			for (CreatedFile createdFile: createdFiles) {
 				// the old SMIL file will be deleted as it is now outdated
 				if (createdFile.getFilename().toLowerCase().endsWith("smil")) {
-					logger.info("Delete old SMIL file for videoConversion with id: {} / sourceId: {} and id of createdFile {}", videoConversion.getId(), videoConversion.getSourceId(), createdFile.getId());
+					logger.info("Delete old SMIL file for videoConversion with id: {} / sourceId: {} / tenant: {} and id of createdFile {}", videoConversion.getId(), videoConversion.getSourceId(), videoConversion.getTenant(), createdFile.getId());
 					// delete file
 					FileHandler.deleteIfExists(createdFile.getFilePath());
 					// delete from database
@@ -229,7 +237,7 @@ public class VideoConversionService {
 	 * @return 
 	 */
 	public boolean delete() {
-		logger.info("Delete Everything for videoConversion with id: {} / sourceId: {}", videoConversion.getId(), videoConversion.getSourceId());
+		logger.info("Delete Everything for videoConversion with id: {} / sourceId: {} / tenant: {}", videoConversion.getId(), videoConversion.getSourceId(), videoConversion.getTenant());
 		// delete event (and files) in opencast
 		try {
 			OpencastApiCall.deleteEvent(videoConversion.getOpencastId());
@@ -323,13 +331,20 @@ public class VideoConversionService {
 		
 		// download to a temporary filename first
 		// the target file path consists of the image path and the original filename
-		String targetFilePath = Config.getInstance().getProperty("folder.thumbnails") + videoConversion.getFilename();
+		String targetFilePath = FilenameUtils.concat(getThumbnailDirectory(), videoConversion.getFilename());
 		downloadFile(createdFile, targetFilePath);
 		
 		GenericDao.getInstance().update(createdFile);
 		// rename the file to the final name with the necessary suffix right now, as there should be not changes in this short timeframe
-		createdFile = renameFilesToFinalFilename(createdFile, thumbnailSuffixWithoutExtension, Config.getInstance().getProperty("folder.thumbnails"));
+		createdFile = renameFilesToFinalFilename(createdFile, thumbnailSuffixWithoutExtension, getThumbnailDirectory());
 		GenericDao.getInstance().update(createdFile);
+	}
+	
+	/**
+	 * @return the thumbnail directory from request or config as fallback
+	 */
+	private String getThumbnailDirectory() {
+		return videoConversion.getTargetThumbnailDirectory() != null ? videoConversion.getTargetThumbnailDirectory() : Config.getInstance().getProperty("folder.thumbnails");
 	}
 
 	/**
@@ -661,7 +676,7 @@ public class VideoConversionService {
 			if (targetPath == null) {
 				targetFilePath = videoConversion.getTargetFilePath();
 			} else {
-				targetFilePath = targetPath + videoConversion.getFilename();
+				targetFilePath = FilenameUtils.concat(targetPath, videoConversion.getFilename());
 			}
 			// add the suffix to the basename (e.g. _m for thumbnails)
 			targetFilePath = FilenameHandler.addToBasename(targetFilePath, suffixWithoutExtension);
@@ -724,5 +739,53 @@ public class VideoConversionService {
 		
 		GenericDao.getInstance().update(videoConversion);
 		logger.info("The new status of the videoConversion with id: {} / source id: {} is {}", videoConversion.getId(), videoConversion.getSourceId(), status);
+	}
+	
+	/**
+	 * Returns alls older video conversion for the same sourceId and tenant as the current videoconversion
+	 * @param exceptNewest exclude the newest (current) videoConversion
+	 */
+	private List<VideoConversion> getOlderVideoConversions(boolean exceptNewest) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("sourceId", videoConversion.getSourceId());
+		map.put("tenant", videoConversion.getTenant());
+		List<VideoConversion> videoConversions = GenericDao.getInstance().getByMultipleFieldsValuesOrderedDesc(VideoConversion.class, map, "startTime");
+		// remove the current videoconversion from the list, we don't need to delete anything from this
+		if (exceptNewest)
+			videoConversions.remove(0);
+		
+		return videoConversions;
+	}
+	
+	/**
+	 * Deletes older events from opencast  for the same sourceId and tenant as the current videoconversion
+	 * @param exceptNewest exclude the newest/ current videoconversion from deleting
+	 */
+	private void deleteOldEventsFromOpencast(boolean exceptNewest) {
+		// get all video conversion but the new one
+		List<VideoConversion> oldVideoConversions = getOlderVideoConversions(exceptNewest);
+		
+		if (!oldVideoConversions.isEmpty()) {
+			for (VideoConversion oldVideoConversion: oldVideoConversions) {
+				OpencastApiCall.deleteEvent(oldVideoConversion.getOpencastId());
+			}
+		}
+	}
+	
+	/**
+	 * Deletes alls older video conversion for the same sourceId and tenant as the current videoconversion
+	 * @param exceptNewest exclude the newest from deleting
+	 */
+	private void deleteOlderVideoConversions(boolean exceptNewest) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("sourceId", videoConversion.getSourceId());
+		map.put("tenant", videoConversion.getTenant());
+		List<VideoConversion> videoConversions = GenericDao.getInstance().getByMultipleFieldsValuesOrderedDesc(VideoConversion.class, map, "startTime");
+		// remove the current videoconversion from the list, we don't need to delete anything from this
+		if (exceptNewest)
+			videoConversions.remove(0);
+		for (VideoConversion olderVideoConversion: videoConversions) {
+			cleanup(olderVideoConversion);
+		}
 	}
 }

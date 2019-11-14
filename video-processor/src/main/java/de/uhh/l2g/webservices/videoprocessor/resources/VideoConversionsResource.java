@@ -3,6 +3,7 @@ package de.uhh.l2g.webservices.videoprocessor.resources;
 import java.net.URI;
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
@@ -33,6 +34,17 @@ import de.uhh.l2g.webservices.videoprocessor.service.VideoConversionService;
 @Path("videoconversion")
 public class VideoConversionsResource {
 	
+	protected String tenant;
+	
+	/**
+	 * This method is called upon each request to set the tenant from the header if there is any
+	 */
+	@Context
+	public void setServletContext(HttpServletRequest request) {
+		String tenant = request.getHeader("Tenant");
+		this.tenant = tenant;
+	}
+	
     /**
      * Delegates calls to a specific id to the VideoConversionResource class
      *
@@ -41,7 +53,7 @@ public class VideoConversionsResource {
      */
 	@Path("{id}")
 	public VideoConversionResource getVideoConversion(@PathParam("id") Long id) {
-		return new VideoConversionResource(id);
+		return new VideoConversionResource(id, tenant);
 	}
 	
     /**
@@ -53,7 +65,7 @@ public class VideoConversionsResource {
 	@Path("sourceid/{id}")
 	public VideoConversionResourceBySourceId getVideoConversionBySourceId(@PathParam("id") Long sourceId) {
 		// the sourceId is used as an identifier
-		return new VideoConversionResourceBySourceId(sourceId);
+		return new VideoConversionResourceBySourceId(sourceId, tenant);
 	}
 	
     /**
@@ -64,7 +76,8 @@ public class VideoConversionsResource {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<VideoConversion> getVideoConversions() {
-		List<VideoConversion> videoConversions = GenericDao.getInstance().getAll(VideoConversion.class);
+		// return the video conversion list filtered by tenant
+		List<VideoConversion> videoConversions = GenericDao.getInstance().getByFieldValue(VideoConversion.class, "tenant", tenant);
 		if (videoConversions.isEmpty()) {
 			// the default ExceptionMapper takes care of the correct header status code
             throw new NotFoundException();
@@ -82,7 +95,8 @@ public class VideoConversionsResource {
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response postVideoConversions(VideoConversion videoConversion, @Context UriInfo uriInfo) {
-
+		// add the tenant
+		videoConversion.setTenant(tenant);
 		VideoConversionService vc = new VideoConversionService(videoConversion);
 		VideoConversion videoConversionDb = vc.runVideoConversion();
 		if (videoConversionDb == null) {
