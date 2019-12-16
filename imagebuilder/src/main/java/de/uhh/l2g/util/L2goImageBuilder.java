@@ -1,6 +1,7 @@
 package de.uhh.l2g.util;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.AttributedString;
 
 import javax.imageio.ImageIO;
 
@@ -12,6 +13,7 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.Font;
 import java.awt.Transparency;
+import java.awt.font.TextAttribute;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.FontFormatException;
@@ -199,9 +201,12 @@ public abstract class L2goImageBuilder {
      */
     protected int drawString(Graphics g, String text, int x, int y, int maxTextWidth, int maxLines, boolean draw)
     {
-    	// check if font supports the text given, if not fall back to the default sansSerif font
-        if (g.getFont().canDisplayUpTo(text)>-1) {
-        	Font fontFallback;
+    	boolean textHasCharactersWhichCannotBedDisplayed = false;
+    	Font originalFont = g.getFont();
+    	// check if font supports the text given, if not prepare the use of an fallback font for the specific characters
+    	Font fontFallback = null;
+        if (originalFont.canDisplayUpTo(text)>-1) {
+        	textHasCharactersWhichCannotBedDisplayed = true;
         	switch (this.getfontStyle()) {
     			case Font.PLAIN:
     				fontFallback = this.fontFallbackRegular;
@@ -215,7 +220,6 @@ public abstract class L2goImageBuilder {
         		default:
     				fontFallback = this.fontFallbackRegular;
         	}
-        	g.setFont(fontFallback);
         }
         
         FontMetrics fm = g.getFontMetrics();
@@ -252,7 +256,22 @@ public abstract class L2goImageBuilder {
                     }
         		}
         		if (draw) {
-            		g.drawString(word, curX, curY);
+            			// check if this word has chars which can not be displayed with the given font
+            			if (g.getFont().canDisplayUpTo(word)>-1) {
+            				// replace the characters with the fallback font
+            				AttributedString attributedWord = new AttributedString(word);
+            				attributedWord.addAttribute(TextAttribute.FONT, originalFont, 0, word.length());
+            				for (int i = 0; i < word.length(); i++) {
+            		        	if (!originalFont.canDisplay(word.charAt(i))) {
+            		        		attributedWord.addAttribute(TextAttribute.FONT, fontFallback, i, i+1);
+            		        	}
+            		        }
+    		        		g.drawString(attributedWord.getIterator(),curX, curY);
+            			
+            		} else {
+            			// default case, just draw the string
+                		g.drawString(word, curX, curY);
+            		}
         		}
 
         		// move over to the right for next word
