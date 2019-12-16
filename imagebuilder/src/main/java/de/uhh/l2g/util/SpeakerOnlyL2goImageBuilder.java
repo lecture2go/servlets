@@ -1,5 +1,6 @@
 package de.uhh.l2g.util;
 
+import java.awt.Font;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 
