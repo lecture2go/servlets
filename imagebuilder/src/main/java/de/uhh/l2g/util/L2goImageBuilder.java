@@ -41,6 +41,10 @@ public abstract class L2goImageBuilder {
 	Font fontRegular;
 	Font fontBold;
 	Font fontItalic;
+	Font fontFallbackRegular;
+	Font fontFallbackBold;
+	Font fontFallbackItalic;
+
 	float fontSize;
 	int fontStyle;
 	int maxTextWidth;
@@ -195,9 +199,23 @@ public abstract class L2goImageBuilder {
      */
     protected int drawString(Graphics g, String text, int x, int y, int maxTextWidth, int maxLines, boolean draw)
     {
-        // check if font supports the text given, if not fall back to the default sansSerif font
+    	// check if font supports the text given, if not fall back to the default sansSerif font
         if (g.getFont().canDisplayUpTo(text)>-1) {
-        	g.setFont(new Font("SansSerif", this.getfontStyle(), (int) (this.getfontSize()*0.85)));
+        	Font fontFallback;
+        	switch (this.getfontStyle()) {
+    			case Font.PLAIN:
+    				fontFallback = this.fontFallbackRegular;
+    				break;
+        		case Font.BOLD:
+        			fontFallback = this.fontFallbackBold;
+        			break;
+        		case Font.ITALIC:
+        			fontFallback = this.fontFallbackItalic;
+        			break;
+        		default:
+    				fontFallback = this.fontFallbackRegular;
+        	}
+        	g.setFont(fontFallback);
         }
         
         FontMetrics fm = g.getFontMetrics();
@@ -475,6 +493,42 @@ public abstract class L2goImageBuilder {
 	public void setFontItalic(InputStream fontStream) throws IOException, FontFormatException {
     	GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 		this.fontItalic = this.initializeFont(ge, fontStream);
+		fontStream.close();
+	}
+	
+    /**
+     * Sets the font-stream
+     * @param fontStream the stream of the font
+     * @throws FontFormatException 
+     * @throws IOException 
+     */
+	public void setFontFallbackRegular(InputStream fontStream) throws IOException, FontFormatException {
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		this.fontFallbackRegular = this.initializeFont(ge, fontStream);
+		fontStream.close();
+	}
+	
+    /**
+     * Sets the font-stream
+     * @param fontStream the stream of the font
+     * @throws FontFormatException 
+     * @throws IOException 
+     */
+	public void setFontFallbackBold(InputStream fontStream) throws IOException, FontFormatException {
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		this.fontFallbackBold = this.initializeFont(ge, fontStream);
+		fontStream.close();
+	}
+	
+    /**
+     * Sets the font-stream
+     * @param fontStream the stream of the font
+     * @throws FontFormatException 
+     * @throws IOException 
+     */
+	public void setFontFallbackItalic(InputStream fontStream) throws IOException, FontFormatException {
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		this.fontFallbackItalic = this.initializeFont(ge, fontStream);
 		fontStream.close();
 	}
 

@@ -177,7 +177,20 @@ public class L2goImageBuilderServlet extends HttpServlet {
 			
 			// the italic font type
 			InputStream fontItalicStream = getServletContext().getResourceAsStream("/WEB-INF/TheSansUHH_Regular_Italic.ttf");
-			imageBuilder.setFontItalic(fontItalicStream);			
+			imageBuilder.setFontItalic(fontItalicStream);		
+			
+			// the fallback regular font type
+			InputStream fontFallbackRegularStream = getServletContext().getResourceAsStream("/WEB-INF/SourceSansPro-Regular.ttf");
+			imageBuilder.setFontFallbackRegular(fontFallbackRegularStream);
+			
+			// the fallback regular font type
+			InputStream fontFallbackBoldStream = getServletContext().getResourceAsStream("/WEB-INF/SourceSansPro-Bold.ttf");
+			imageBuilder.setFontFallbackBold(fontFallbackBoldStream);
+			
+			// the fallback regular font type
+			InputStream fontFallbackItalicStream = getServletContext().getResourceAsStream("/WEB-INF/SourceSansPro-It.ttf");
+			imageBuilder.setFontFallbackItalic(fontFallbackItalicStream);
+			
 		} catch(IOException e) {
 			e.printStackTrace();
 		} catch(FontFormatException e) {
