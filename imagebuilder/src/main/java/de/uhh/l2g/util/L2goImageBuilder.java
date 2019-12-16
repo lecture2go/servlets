@@ -150,6 +150,20 @@ public abstract class L2goImageBuilder {
 	}
 	
     /**
+     * calculate line count of text, when applied to the graphics
+	 * @param g the Graphics context
+     * @param text the text which lines should be calculated
+     * @param x x-coordinate of the position, where the text would be drawn
+     * @param y y-coordinate of the position, where the text would be drawn
+     * @param maxTextWidth the maximum length of text in pixels, determines where the line is wrapped
+     * @param maxLines the maximum amount of lines
+     * @return
+     */
+    protected int calculateLineCount(Graphics g, String text, int x, int maxTextWidth) {
+    	return drawString(g, text, x, 0, maxTextWidth, 100, false);
+    }
+	
+    /**
      * Draws a string with line wrapping without a line limit
      * @param g the Graphics context
      * @param text the text to be drawn
@@ -161,6 +175,10 @@ public abstract class L2goImageBuilder {
     protected int drawString(Graphics g, String text, int x, int y, int maxTextWidth) {
         return this.drawString(g, text, x, y, maxTextWidth, Integer.MAX_VALUE);
     }
+    
+    protected int drawString(Graphics g, String text, int x, int y, int maxTextWidth, int maxLines) {
+		return drawString(g, text, x, y, maxTextWidth, maxLines, true);
+    }
 
     /**
      * Draws a string with line wrapping with a line limit
@@ -171,9 +189,10 @@ public abstract class L2goImageBuilder {
      * @param y y-coordinate of the position, where the text is drawn
      * @param maxTextWidth the maximum length of text in pixels, determines where the line is wrapped
      * @param maxLines the maximum amount of lines
+     * @param draw true if should be drawn, false if not (only calculates used lines for text)
      * @return the amount of lines which were drawn
      */
-    protected int drawString(Graphics g, String text, int x, int y, int maxTextWidth, int maxLines)
+    protected int drawString(Graphics g, String text, int x, int y, int maxTextWidth, int maxLines, boolean draw)
     {
         FontMetrics fm = g.getFontMetrics();
 
@@ -200,7 +219,7 @@ public abstract class L2goImageBuilder {
         		if (curX + wordWidth >= x + maxTextWidth) {
                     linesCount++;
                     // if there are more lines than allowed, truncate the last word
-        			if (linesCount > maxLines) {
+        			if (linesCount > maxLines && draw) {
                         g.drawString("...", curX, curY);
                         break;
                     } else {
@@ -208,7 +227,9 @@ public abstract class L2goImageBuilder {
                         curX = x;
                     }
         		}
-        		g.drawString(word, curX, curY);
+        		if (draw) {
+            		g.drawString(word, curX, curY);
+        		}
 
         		// move over to the right for next word
         		curX += wordWidth;
@@ -219,6 +240,7 @@ public abstract class L2goImageBuilder {
         }
         return linesCount;
     }
+
     
     /**
      * 
