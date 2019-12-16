@@ -52,9 +52,10 @@ public class SpeakerSlidesL2goImageBuilder extends L2goImageBuilder {
     	// the author position is fixed
     	authorPosition = 106;
     	this.g.setFont(this.fontBold);
+    	this.setFontStyle(Font.BOLD);
         
         // calculate how many lines may be used for each text category
-        int authorLines 		= this.calculateLineCount(this.g, this.author, this.offsetLeft, this.maxTextWidth-130);
+        int authorLines = this.calculateLineCount(this.g, this.author, this.offsetLeft, this.maxTextWidth-130);
     	
     	
 	    this.drawString(this.g, this.author, this.offsetLeft, authorPosition, this.maxTextWidth-130, 2);
@@ -65,11 +66,13 @@ public class SpeakerSlidesL2goImageBuilder extends L2goImageBuilder {
             institutionPosition = 170;
         }
 	    this.g.setFont(this.fontItalic);
+    	this.setFontStyle(Font.ITALIC);
         int institutionLines 	= this.calculateLineCount(this.g, this.institution, this.offsetLeft, this.maxTextWidth);
 	   	this.drawString(this.g, this.institution, this.offsetLeft, institutionPosition, this.maxTextWidth, 2);
 
 	   	// title
 	  	this.g.setFont(this.fontRegular);
+    	this.setFontStyle(Font.PLAIN);
 	  	// we need to calculate the line count of the series and date lines in regard to the used font
         int seriesAndDateLines 	= this.calculateLineCount(this.g, seriesAndDate, this.offsetLeft, this.maxTextWidth);
         int titleLines 	= this.calculateLineCount(this.g, this.title, this.offsetLeft, this.maxTextWidth);

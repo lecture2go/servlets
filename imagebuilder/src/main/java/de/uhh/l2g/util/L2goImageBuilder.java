@@ -42,6 +42,7 @@ public abstract class L2goImageBuilder {
 	Font fontBold;
 	Font fontItalic;
 	float fontSize;
+	int fontStyle;
 	int maxTextWidth;
 
 	// the height of a text line, used for text wrapping
@@ -194,6 +195,11 @@ public abstract class L2goImageBuilder {
      */
     protected int drawString(Graphics g, String text, int x, int y, int maxTextWidth, int maxLines, boolean draw)
     {
+        // check if font supports the text given, if not fall back to the default sansSerif font
+        if (g.getFont().canDisplayUpTo(text)>-1) {
+        	g.setFont(new Font("SansSerif", this.getfontStyle(), (int) (this.getfontSize()*0.85)));
+        }
+        
         FontMetrics fm = g.getFontMetrics();
 
         int linesCount = 0;
@@ -486,6 +492,22 @@ public abstract class L2goImageBuilder {
 	 */
 	public float getfontSize() {
 		return this.fontSize;
+	}
+	
+	/**
+	 * Sets the font style
+	 * @param fontStyle the style of the font
+	 */
+	public void setFontStyle(int fontStyle) {
+		this.fontStyle = fontStyle;
+	}
+
+	/**
+	 * Gets the font style
+	 * @param fontStyle the style of the font
+	 */
+	public int getfontStyle() {
+		return this.fontStyle;
 	}
 	
 	

@@ -52,6 +52,7 @@ public class SpeakerOnlyL2goImageBuilder extends L2goImageBuilder {
     	// the author position is fixed
     	authorYPosition = 42;
 	    this.g.setFont(this.fontBold);
+    	this.setFontStyle(Font.BOLD);
 	    int widthAuthor = this.g.getFontMetrics().stringWidth(this.author);
 	    this.drawString(g, this.author, this.offsetLeft, authorYPosition, this.maxTextWidth, 1);
 
@@ -67,6 +68,7 @@ public class SpeakerOnlyL2goImageBuilder extends L2goImageBuilder {
 	    }
 
 	    this.g.setFont(this.fontItalic);
+    	this.setFontStyle(Font.ITALIC);
 	    
 	    int widthInstitution = this.g.getFontMetrics().stringWidth(this.institution);
 	    // if the author and institution fits in one line, do it (separated by prefix)
@@ -91,11 +93,13 @@ public class SpeakerOnlyL2goImageBuilder extends L2goImageBuilder {
 	    }
 	   	
 	  	this.g.setFont(this.fontRegular);
+    	this.setFontStyle(Font.PLAIN);
 	  	usedLines = this.drawString(this.g, this.title, this.offsetLeft, titleYPosition, this.maxTextWidth, maxLines);
 	  	
 	    // the series/date position is fixed
   		seriesYPosition = 184;
 	  	this.g.setFont(this.fontItalic);
+    	this.setFontStyle(Font.ITALIC);
 
 	   	this.drawString(this.g, seriesAndDate, this.offsetLeft, seriesYPosition, this.maxTextWidth, 1);
 	   	
