@@ -1,6 +1,7 @@
 package de.uhh.l2g.util;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.AttributedString;
 
 import javax.imageio.ImageIO;
 
@@ -12,6 +13,7 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.Font;
 import java.awt.Transparency;
+import java.awt.font.TextAttribute;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.FontFormatException;
@@ -41,7 +43,12 @@ public abstract class L2goImageBuilder {
 	Font fontRegular;
 	Font fontBold;
 	Font fontItalic;
+	Font fontFallbackRegular;
+	Font fontFallbackBold;
+	Font fontFallbackItalic;
+
 	float fontSize;
+	int fontStyle;
 	int maxTextWidth;
 
 	// the height of a text line, used for text wrapping
@@ -150,6 +157,20 @@ public abstract class L2goImageBuilder {
 	}
 	
     /**
+     * calculate line count of text, when applied to the graphics
+	 * @param g the Graphics context
+     * @param text the text which lines should be calculated
+     * @param x x-coordinate of the position, where the text would be drawn
+     * @param y y-coordinate of the position, where the text would be drawn
+     * @param maxTextWidth the maximum length of text in pixels, determines where the line is wrapped
+     * @param maxLines the maximum amount of lines
+     * @return
+     */
+    protected int calculateLineCount(Graphics g, String text, int x, int maxTextWidth) {
+    	return drawString(g, text, x, 0, maxTextWidth, 100, false);
+    }
+	
+    /**
      * Draws a string with line wrapping without a line limit
      * @param g the Graphics context
      * @param text the text to be drawn
@@ -161,6 +182,10 @@ public abstract class L2goImageBuilder {
     protected int drawString(Graphics g, String text, int x, int y, int maxTextWidth) {
         return this.drawString(g, text, x, y, maxTextWidth, Integer.MAX_VALUE);
     }
+    
+    protected int drawString(Graphics g, String text, int x, int y, int maxTextWidth, int maxLines) {
+		return drawString(g, text, x, y, maxTextWidth, maxLines, true);
+    }
 
     /**
      * Draws a string with line wrapping with a line limit
@@ -171,10 +196,32 @@ public abstract class L2goImageBuilder {
      * @param y y-coordinate of the position, where the text is drawn
      * @param maxTextWidth the maximum length of text in pixels, determines where the line is wrapped
      * @param maxLines the maximum amount of lines
+     * @param draw true if should be drawn, false if not (only calculates used lines for text)
      * @return the amount of lines which were drawn
      */
-    protected int drawString(Graphics g, String text, int x, int y, int maxTextWidth, int maxLines)
+    protected int drawString(Graphics g, String text, int x, int y, int maxTextWidth, int maxLines, boolean draw)
     {
+    	boolean textHasCharactersWhichCannotBedDisplayed = false;
+    	Font originalFont = g.getFont();
+    	// check if font supports the text given, if not prepare the use of an fallback font for the specific characters
+    	Font fontFallback = null;
+        if (originalFont.canDisplayUpTo(text)>-1) {
+        	textHasCharactersWhichCannotBedDisplayed = true;
+        	switch (this.getfontStyle()) {
+    			case Font.PLAIN:
+    				fontFallback = this.fontFallbackRegular;
+    				break;
+        		case Font.BOLD:
+        			fontFallback = this.fontFallbackBold;
+        			break;
+        		case Font.ITALIC:
+        			fontFallback = this.fontFallbackItalic;
+        			break;
+        		default:
+    				fontFallback = this.fontFallbackRegular;
+        	}
+        }
+        
         FontMetrics fm = g.getFontMetrics();
 
         int linesCount = 0;
@@ -200,7 +247,7 @@ public abstract class L2goImageBuilder {
         		if (curX + wordWidth >= x + maxTextWidth) {
                     linesCount++;
                     // if there are more lines than allowed, truncate the last word
-        			if (linesCount > maxLines) {
+        			if (linesCount > maxLines && draw) {
                         g.drawString("...", curX, curY);
                         break;
                     } else {
@@ -208,7 +255,24 @@ public abstract class L2goImageBuilder {
                         curX = x;
                     }
         		}
-        		g.drawString(word, curX, curY);
+        		if (draw) {
+            			// check if this word has chars which can not be displayed with the given font
+            			if (g.getFont().canDisplayUpTo(word)>-1) {
+            				// replace the characters with the fallback font
+            				AttributedString attributedWord = new AttributedString(word);
+            				attributedWord.addAttribute(TextAttribute.FONT, originalFont, 0, word.length());
+            				for (int i = 0; i < word.length(); i++) {
+            		        	if (!originalFont.canDisplay(word.charAt(i))) {
+            		        		attributedWord.addAttribute(TextAttribute.FONT, fontFallback, i, i+1);
+            		        	}
+            		        }
+    		        		g.drawString(attributedWord.getIterator(),curX, curY);
+            			
+            		} else {
+            			// default case, just draw the string
+                		g.drawString(word, curX, curY);
+            		}
+        		}
 
         		// move over to the right for next word
         		curX += wordWidth;
@@ -219,6 +283,7 @@ public abstract class L2goImageBuilder {
         }
         return linesCount;
     }
+
     
     /**
      * 
@@ -449,6 +514,42 @@ public abstract class L2goImageBuilder {
 		this.fontItalic = this.initializeFont(ge, fontStream);
 		fontStream.close();
 	}
+	
+    /**
+     * Sets the font-stream
+     * @param fontStream the stream of the font
+     * @throws FontFormatException 
+     * @throws IOException 
+     */
+	public void setFontFallbackRegular(InputStream fontStream) throws IOException, FontFormatException {
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		this.fontFallbackRegular = this.initializeFont(ge, fontStream);
+		fontStream.close();
+	}
+	
+    /**
+     * Sets the font-stream
+     * @param fontStream the stream of the font
+     * @throws FontFormatException 
+     * @throws IOException 
+     */
+	public void setFontFallbackBold(InputStream fontStream) throws IOException, FontFormatException {
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		this.fontFallbackBold = this.initializeFont(ge, fontStream);
+		fontStream.close();
+	}
+	
+    /**
+     * Sets the font-stream
+     * @param fontStream the stream of the font
+     * @throws FontFormatException 
+     * @throws IOException 
+     */
+	public void setFontFallbackItalic(InputStream fontStream) throws IOException, FontFormatException {
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		this.fontFallbackItalic = this.initializeFont(ge, fontStream);
+		fontStream.close();
+	}
 
 	/**
 	 * Sets the font size
@@ -464,6 +565,22 @@ public abstract class L2goImageBuilder {
 	 */
 	public float getfontSize() {
 		return this.fontSize;
+	}
+	
+	/**
+	 * Sets the font style
+	 * @param fontStyle the style of the font
+	 */
+	public void setFontStyle(int fontStyle) {
+		this.fontStyle = fontStyle;
+	}
+
+	/**
+	 * Gets the font style
+	 * @param fontStyle the style of the font
+	 */
+	public int getfontStyle() {
+		return this.fontStyle;
 	}
 	
 	

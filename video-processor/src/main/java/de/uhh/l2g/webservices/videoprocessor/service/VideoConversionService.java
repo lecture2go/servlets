@@ -67,9 +67,8 @@ public class VideoConversionService {
 		map.put("sourceId", videoConversion.getSourceId());
 		map.put("tenant", videoConversion.getTenant());
 	
-		// previous video conversions for this source id and tenant might still be running, delete it (files will be deleted after new conversion finishes)
-		deleteOldEventsFromOpencast(false);
-		
+		// delete older video conversion for this sourceid and same tenant as current videoconversion
+		deleteOlderVideoConversions(false);
 		
 		// persist a new videoConversion object
 		videoConversion = GenericDao.getInstance().save(videoConversion);
@@ -126,9 +125,6 @@ public class VideoConversionService {
 	public void handleOpencastResponse(Boolean success) {
 		logger.info("Opencast has sent a http-notify for videoConversion with id: {} / sourceId: {} with the result: {}", videoConversion.getId(), videoConversion.getSourceId(), Boolean.toString(success));
 		if (success) {
-			// delete older video conversion for this sourceid and same tenant as current videoconversion
-			deleteOlderVideoConversions(true);
-			
 			// the opencast workflow was successful
 			persistVideoConversionStatus(videoConversion, VideoConversionStatus.OC_SUCCEEDED);
 			

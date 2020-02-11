@@ -1,5 +1,6 @@
 package de.uhh.l2g.util;
 
+import java.awt.Font;
 import java.awt.image.BufferedImage;
 
 /**
@@ -52,28 +53,48 @@ public class SpeakerSlidesL2goImageBuilder extends L2goImageBuilder {
     	// the author position is fixed
     	authorPosition = 106;
     	this.g.setFont(this.fontBold);
-	    int usedLines = this.drawString(g, this.author, this.offsetLeft, authorPosition, this.maxTextWidth-130, 2);
+    	this.setFontStyle(Font.BOLD);
+        
+        // calculate how many lines may be used for each text category
+        int authorLines = this.calculateLineCount(this.g, this.author, this.offsetLeft, this.maxTextWidth-130);
+    	
+    	
+	    this.drawString(this.g, this.author, this.offsetLeft, authorPosition, this.maxTextWidth-130, 2);
 	    // the institution position is relative to the author position
-        if (usedLines <= 1) {
+        if (authorLines <= 1) {
             institutionPosition = 140;
         } else {
             institutionPosition = 170;
         }
 	    this.g.setFont(this.fontItalic);
-	   	usedLines = this.drawString(this.g, this.institution, this.offsetLeft, institutionPosition, this.maxTextWidth, 2);
+    	this.setFontStyle(Font.ITALIC);
+        int institutionLines 	= this.calculateLineCount(this.g, this.institution, this.offsetLeft, this.maxTextWidth);
+	   	this.drawString(this.g, this.institution, this.offsetLeft, institutionPosition, this.maxTextWidth, 2);
 
-	   	// the title position is relative to the institution position
-        if (usedLines <= 1) {
+	   	// title
+	  	this.g.setFont(this.fontRegular);
+    	this.setFontStyle(Font.PLAIN);
+	  	// we need to calculate the line count of the series and date lines in regard to the used font
+        int seriesAndDateLines 	= this.calculateLineCount(this.g, seriesAndDate, this.offsetLeft, this.maxTextWidth);
+        int titleLines 	= this.calculateLineCount(this.g, this.title, this.offsetLeft, this.maxTextWidth);
+
+
+        // choose upper or lower position
+        if ((authorLines + institutionLines) <=3 && (titleLines>=3 && seriesAndDateLines>=2) 
+        		|| ((authorLines + institutionLines) <=2 && titleLines>=3)) {
         	titlePosition = 206;
-        } else {
+        }else {
         	titlePosition = 240;
         }
-	    //titlePosition = 206;
-	  	this.g.setFont(this.fontRegular);
-	  	usedLines = this.drawString(this.g, this.title, this.offsetLeft, titlePosition, this.maxTextWidth, 3);
-	  	
-	    // the series/date position is fixed
-	  	if (this.g.getFontMetrics().stringWidth(seriesAndDate) > this.maxTextWidth) {
+        
+        if ((seriesAndDateLines + institutionLines + authorLines) <6) {
+		  	this.drawString(this.g, this.title, this.offsetLeft, titlePosition, this.maxTextWidth, 3);
+	  	} else {
+		  	this.drawString(this.g, this.title, this.offsetLeft, titlePosition, this.maxTextWidth, 2);
+	  	}
+
+	  	// the series/date position is fixed
+	  	if (seriesAndDateLines > 1 ) {
 	  		seriesPosition = 312;
 	  	} else {
     	    seriesPosition = 344;
