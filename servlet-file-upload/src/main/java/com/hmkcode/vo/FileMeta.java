@@ -18,7 +18,8 @@ public class FileMeta {
 	private String containerFormat;
 	private String secureFileName;
 	private String fileName;
-	private String fileSize;
+	private long fileSize;
+	
 	private String fileType;
 	private InputStream content;
 
@@ -48,10 +49,10 @@ public class FileMeta {
 	public void setFileName(String fileName) {
 		this.fileName = fileName;
 	}
-	public String getFileSize() {
+	public long getFileSize() {
 		return fileSize;
 	}
-	public void setFileSize(String fileSize) {
+	public void setFileSize(long fileSize) {
 		this.fileSize = fileSize;
 	}
 	public String getFileType() {
@@ -71,7 +72,12 @@ public class FileMeta {
 		return "FileMeta [fileName=" + fileName + ", fileSize=" + fileSize
 				+ ", fileType=" + fileType + "]";
 	}
-	
-	
+	public String getCurrentFileName() {
+		if (openAccess.equals("1")) {
+			return fileName;
+		} else {
+			return secureFileName;
+		}
+	}
 	
 }
