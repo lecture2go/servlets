@@ -188,6 +188,8 @@ public class MultipartRequestHandler {
 							
 							if (fileFullLength < 0) {  // File is not chunked
 			                    temp.setFileSize(item.getSize());
+			                    if (f.exists()) // if file already exists, overwrite
+			            	        f.delete();
 			                    item.write(f);
 			                } else {  // File is chunked
 			                    File assembledFile = null;
