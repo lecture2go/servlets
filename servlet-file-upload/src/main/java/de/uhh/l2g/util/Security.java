@@ -36,12 +36,23 @@ package de.uhh.l2g.util;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.apache.commons.codec.binary.Hex;
+
+import de.uhh.l2g.util.Config;
 import sun.misc.BASE64Encoder;
 
 /**
  * The Class Security.
  */
 public class Security {
+	
+	// THIS MUST NOT BE PUBLIC
+	private static String secret=Config.getInstance().getProperty("fileupload.secret");
+	
+	private static String repositoryRoot = Config.getInstance().getProperty("fileupload.files.rootfolder");
 
 	/** The tomcat l2 go video repository. */
 	private String tomcatL2GoVideoRepository = "";
@@ -62,6 +73,10 @@ public class Security {
 	 */
 	public void setTomcatL2GoVideoRepository(String tomcatL2GoVideoRepository) {
 		this.tomcatL2GoVideoRepository = tomcatL2GoVideoRepository;
+	}
+	
+	public static String getRepositoryRoot() {
+		return repositoryRoot;
 	}
 
 	/** The fms l2 go video repository. */
@@ -173,6 +188,41 @@ public class Security {
 		} catch (IOException e) {
 			return null;
 		}
+	}
+	
+	/**
+	 * @param data
+	 * @param key
+	 * @return
+	 * @throws Exception
+	 */
+	public static byte[] HmacSHA256(String data, byte[] key) throws Exception {
+	    String algorithm="HmacSHA256";
+	    Mac mac = Mac.getInstance(algorithm);
+	    mac.init(new SecretKeySpec(key, algorithm));
+	    return mac.doFinal(data.getBytes("UTF-8"));
+	}
+	
+	/**
+	 * @param signer
+	 * @return
+	 */
+	public static String getSignatureKey(byte[] signer) {
+		return new String(Hex.encodeHex(signer));
+	}
+
+	/**
+	 * @param dateStamp
+	 * @param toSign
+	 * @return
+	 * @throws Exception
+	 */
+	public static byte[] getSignatureKey(String dateStamp, String toSign) throws Exception {
+	    //byte[] kSecret = (PropsUtil.get("fileupload.secret")).getBytes("UTF-8");
+	    byte[] kSecret = (Security.secret).getBytes("UTF-8");
+	    byte[] kDate = HmacSHA256(dateStamp, kSecret);
+	    byte[] dataSigning = HmacSHA256(toSign, kDate);
+	    return dataSigning;
 	}
 
 }
