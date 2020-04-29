@@ -13,7 +13,6 @@ import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.swing.text.html.HTMLDocument.Iterator;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -21,6 +20,8 @@ import org.json.JSONObject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hmkcode.vo.FileMeta;
+
+import de.uhh.l2g.util.Security;
     
 //this to be used with Java Servlet 3.0 API
 @MultipartConfig 
@@ -35,6 +36,27 @@ public class FileUploadServlet extends HttpServlet {
 	 * doPost(): upload the files and other parameters
 	 ****************************************************/
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
+		
+		// validate if the request has the correct token
+		String transmittedToken = request.getHeader("X-token");
+		String expirationTime = request.getHeader("X-expiration");
+		String videoId = request.getHeader("X-videoId");
+				
+		String correctToken = null;
+		try {
+			correctToken = Security.getSignatureKey(Security.getSignatureKey(expirationTime, videoId));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		if (transmittedToken == null || 
+				correctToken == null || 
+				!transmittedToken.equals(correctToken) ||
+				System.currentTimeMillis()>Long.valueOf(expirationTime)) {
+			response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+	    	response.getWriter().print("");
+		}
+		
 		// 1. Upload File Using Java Servlet API
 		//files.addAll(MultipartRequestHandler.uploadByJavaServletAPI(request));			
 	//	List<FileMeta> files = new ArrayList<FileMeta>();	

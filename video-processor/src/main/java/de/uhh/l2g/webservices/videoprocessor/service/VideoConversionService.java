@@ -3,6 +3,7 @@ package de.uhh.l2g.webservices.videoprocessor.service;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +19,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -57,7 +59,7 @@ public class VideoConversionService {
 	 * This runs the actual video conversion
 	 * A new event request with the file is sent to opencast to do the heavy lifting
 	 */
-	public VideoConversion runVideoConversion() {		
+	public VideoConversion runVideoConversion() {
 
 		logger.info("A new videoConversion is started for the sourceId {} and tenant {}", videoConversion.getSourceId(), videoConversion.getTenant());
 		logger.info("Additional properties are set {}", videoConversion.getAdditionalProperties().toString());
@@ -220,7 +222,11 @@ public class VideoConversionService {
 			
 			if (videoConversion.getCreateSmil()) {
 				// build SMIL file with renamed files
-				buildSmil(createdVideos);
+				try { 
+					buildSmil(createdVideos);
+				} catch (SmilNotBuildException e) {
+					persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_CREATING_SMIL);
+				}
 			}
 			persistVideoConversionStatus(videoConversion, VideoConversionStatus.FINISHED);
 		}
@@ -246,12 +252,95 @@ public class VideoConversionService {
 		return cleanup();
 	}
 	
+	/**
+	 * Rebuilds the SMIL file of a videoconversion
+	 * @param maxHeight the max height of the videos used for building the SMIL
+	 * @param maxBitrate the max bitrate of the videos used for building the SMIL
+	 * @throws SmilNotBuildException 
+	 */
+	public void rebuildSmil(long maxHeight, long maxBitrate) throws SmilNotBuildException {
+		List<CreatedFile> createdFiles = new ArrayList<CreatedFile>(videoConversion.getCreatedFiles());
+		
+		// extract the created videos from the created files 
+		List<CreatedVideo> createdVideos = new ArrayList<CreatedVideo>();
+		for(CreatedFile createdFile: createdFiles) {
+			if (createdFile instanceof CreatedVideo) {
+				createdVideos.add((CreatedVideo) createdFile);
+			}
+		}
+		// build SMIL file
+		try {
+			buildSmil(createdVideos, maxHeight, maxBitrate);
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.FINISHED);
+		} catch (SmilNotBuildException e) {
+			throw new SmilNotBuildException();
+		}
+	}
+	
+	
+	/**
+	 * Rebuilds the SMIL file of ALL videoconversions.
+	 * @param tenant the tenant, whose smil files will be rebuild
+	 * @param maxHeight the max height of the videos used for building the SMIL
+	 * @param maxBitrate the max bitrate of the videos used for building the SMIL
+	 * @return errorCount the amount of SMIL files which could not be rebuild
+	 */
+	public long rebuildAllSmil(String[] tenants, long maxHeight, long maxBitrate) {
+		List<VideoConversion> videoConversions;
+		logger.info("Rebuild all SMIL files started...");
+
+		String tenantsString = StringUtils.join(tenants,",");
+		
+		logger.info("... for tenants: {}.", tenantsString);
+
+		if (maxHeight>0) {
+			logger.info("... with resolution limit (height) of: {} pixels.", maxHeight);
+		} else {
+			logger.info("... with no resolution limit");
+		}
+		if (maxBitrate>0) {
+			logger.info("... with bitrate limit of {} bit/s", maxBitrate);
+		} else {
+			logger.info("... with no bitrate limit");
+		}
+		
+		// save the restrictions for further SMIL files in a local properties file
+		Config.getInstance().setAndSaveProperty("smil.restriction.includetenants", tenantsString);
+		Config.getInstance().setAndSaveProperty("smil.restriction.max.height", String.valueOf(maxHeight));
+		Config.getInstance().setAndSaveProperty("smil.restriction.max.bitrate", String.valueOf(maxBitrate));
+		
+		long errorCount = 0;
+		for (String tenant: tenants) {
+			// rebuild SMIL files for this tenant
+			logger.info("Rebuild SMIL for tenant {}. ", tenant);
+			videoConversions= GenericDao.getInstance().getByFieldValue(VideoConversion.class, "tenant", tenant);
+			Map<String, Object> map = new HashMap<String, Object>();
+			map.put("tenant", tenant);
+			map.put("status", VideoConversionStatus.FINISHED);
+			videoConversions = GenericDao.getInstance().getByMultipleFieldsValues(VideoConversion.class, map);
+			
+			for (VideoConversion vc: videoConversions) {
+				try {
+					new VideoConversionService(vc).rebuildSmil(maxHeight, maxBitrate);
+					logger.info("Rebuild SMIL file finished for videoConversionId: {}/ sourceId: {}. ", vc.getId(), vc.getSourceId());
+				} catch (SmilNotBuildException e) {
+					errorCount++;
+					e.printStackTrace();
+				}
+			}
+		}
+		logger.info("===Rebuild all SMIL files has finished with {} errors.===", errorCount);
+		
+		return errorCount;
+	}
+	
 
 	/**
 	 * Does the heavy lifting: Retrieves the metadata from opencast, maps them, download the corresponding files and creates a smil file for adaptive streaming
 	 * @throws NoSuchElementException 
+	 * @throws SmilNotBuildException 
 	 */
-	private void retrieveAndHandleMediaFiles() throws NoSuchElementException {
+	private void retrieveAndHandleMediaFiles() throws NoSuchElementException, SmilNotBuildException {
 		// get the event details and map them to createdVideo objects
 		List<Medium> media = OpencastApiCall.getMedia(videoConversion.getOpencastId());
 		if (media.isEmpty()) {
@@ -363,12 +452,55 @@ public class VideoConversionService {
 		}
 		return true;
 	}
+	
+	/**
+	 * Builds SMIL file for adaptive streaming
+	 * @param createdVideos
+	 * @throws SmilNotBuildException 
+	 */
+	private void buildSmil(List<CreatedVideo> createdVideos) throws SmilNotBuildException {
+		// per default there are no restrictions, but check the config if there are any
+		List<String> tenantsList = null;
+		long maxHeight = 0;
+		long maxBitrate = 0;
+		boolean hasRestriction = false;
+	
+		// check if restriction applies
+		String tenants = Config.getInstance().getProperty("smil.restriction.includetenants");
+		if (tenants != null)  {
+			// is tenant specified in restriction list
+			tenantsList = Arrays.asList(tenants.split("\\s*,\\s*"));
+			if (tenantsList.contains(videoConversion.getTenant())) {
+				hasRestriction = true;
+			}
+		}
+		
+		if (hasRestriction) {
+			try {
+				maxHeight = Long.valueOf(Config.getInstance().getProperty("smil.restriction.max.height"));
+			} catch (NumberFormatException e) {
+				// no config property or property could not be parsed -> maxHeight has default value (0 = unlimited)
+			}
+			try {
+				maxBitrate = Long.valueOf(Config.getInstance().getProperty("smil.restriction.max.bitrate"));
+			} catch (NumberFormatException e) {
+				// no config property or property could not be parsed -> maxBitrate has default value (0 = unlimited)
+			}
+		}
+		
+		buildSmil(createdVideos, maxHeight, maxBitrate);
+	}
+	
+	
 
 	/**
 	 * Builds SMIL file for adaptive streaming
 	 * @param createdVideos
+	 * @param maxHeight the maximum video height which is used in the smil file
+	 * @param maxBitrate the maximum video bitrate which is used in the smil file
+	 * @throws SmilNotBuildException 
 	 */
-	private void buildSmil(List<CreatedVideo> createdVideos) {
+	private void buildSmil(List<CreatedVideo> createdVideos, long maxHeight, long maxBitrate) throws SmilNotBuildException {
 		logger.info("Build a SMIL file for videoConversion with id: {} / sourceId: {}", videoConversion.getId(), videoConversion.getSourceId());
 		// the SMIL file will be written to the same folder as the created videos
 		//String smilFullPath = FilenameUtils.getFullPath(videoConversion.getSourceFilePath());
@@ -379,14 +511,18 @@ public class VideoConversionService {
 		// delete smil file is exists
 		try {
 			FileHandler.deleteIfExists(smilFilePath);
+			GenericDao.getInstance().deleteByFieldValue(CreatedFile.class, "filePath", smilFilePath);
+			videoConversion = GenericDao.getInstance().get(VideoConversion.class, videoConversion.getId());
+
 		} catch (SecurityException e) {
 			// no permission to delete
 			persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_DELETING);
+			throw new SmilNotBuildException();
 		}
 		
 		try {
 			persistVideoConversionStatus(videoConversion, VideoConversionStatus.CREATING_SMIL);
-			SmilBuilder.buildSmil(smilFilePath, createdVideos);
+			SmilBuilder.buildSmil(smilFilePath, createdVideos, maxHeight, maxBitrate);
 			// persist smil file as a createdFile object to database
 			CreatedFile smilFile = new CreatedFile();
 			smilFile.setFilePath(smilFilePath);
@@ -395,6 +531,7 @@ public class VideoConversionService {
 		} catch (ParserConfigurationException | TransformerException e) {
 			persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_CREATING_SMIL);
 			e.printStackTrace();
+			throw new SmilNotBuildException();
 		}
 	}
 	

@@ -126,7 +126,13 @@ public class MultipartRequestHandler {
 					// 2.5 if FileItem is not of type "file"
 				    if (item.isFormField()) {
 				    	// 2.6 Search for parameter
-				        if(item.getFieldName().equals("repository"))repository = item.getString();
+				        if(item.getFieldName().equals("repository")){
+				        	repository = item.getString();
+				        	// only allow repositories which are beneath the given file folder
+				        	if (!repository.startsWith(Security.getRepositoryRoot())) {
+				        		return null;
+				        	}
+				        }
 				        if(item.getFieldName().equals("l2gDateTime"))l2gDateTime = item.getString();
 				        if(item.getFieldName().equals("openaccess"))openaccess = item.getString();
 				        if(item.getFieldName().equals("lectureseriesNumber") && item.getString().trim().length()>0)lectureseriesNumber = item.getString();
@@ -188,6 +194,8 @@ public class MultipartRequestHandler {
 							
 							if (fileFullLength < 0) {  // File is not chunked
 			                    temp.setFileSize(item.getSize());
+			                    if (f.exists()) // if file already exists, overwrite
+			            	        f.delete();
 			                    item.write(f);
 			                } else {  // File is chunked
 			                    File assembledFile = null;

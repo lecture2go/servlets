@@ -281,7 +281,7 @@ public class GenericDao {
 	 * @param type the class of the entity
 	 * @return a list with all filtered entities
 	 */
-	public <T> void deleteByFieldValue(Class<T> type, String field, Long value) {
+	public <T> void deleteByFieldValue(Class<T> type, String field, Object value) {
 		// needs testing
 		EntityManager em = getEntityManager();
 		em.getTransaction().begin();

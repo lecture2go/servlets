@@ -26,7 +26,6 @@ import de.uhh.l2g.webservices.videoprocessor.model.CreatedVideo;
  */
 public class SmilBuilder {
 	
-
 	/**
 	 * Builds a SMIL (xml) file for adaptive Streaming
 	 * @param filePath the file path where the SMIL file will be created
@@ -35,6 +34,19 @@ public class SmilBuilder {
 	 * @throws TransformerException
 	 */
 	public static void buildSmil(String filePath, List<CreatedVideo> videos) throws ParserConfigurationException, TransformerException {
+		buildSmil(filePath, videos, 0, 0);
+	}
+
+	/**
+	 * Builds a SMIL (xml) file for adaptive Streaming
+	 * @param filePath the file path where the SMIL file will be created
+	 * @param videos the videos which will be listed in the file for adaptive streaming
+	 * @param maxHeight the max height of the videos used for building the SMIL
+	 * @param maxBitrate the max bitrate of the videos used for building the SMIL
+	 * @throws ParserConfigurationException
+	 * @throws TransformerException
+	 */
+	public static void buildSmil(String filePath, List<CreatedVideo> videos, long maxHeight, long maxBitrate) throws ParserConfigurationException, TransformerException {
 		// sort the video list with width descending for a better organization of the smil file (with an anonymous class)
 		Collections.sort(videos, new Comparator<CreatedVideo>() {
 		    @Override
@@ -65,6 +77,10 @@ public class SmilBuilder {
 		
 		// video elements
 		for (CreatedVideo video: videos) {
+			// ignore qualities that exceed the set values
+			if (((video.getHeight() > maxHeight) && (maxHeight!=0)) || ((video.getBitrate() > maxBitrate) && (maxBitrate!=0))) {
+				continue;
+			}
 			Element videoElement = doc.createElement("video");
 			videoElement.setAttribute("src", video.getFilename());
 			videoElement.setAttribute("height", String.valueOf(video.getHeight()));

@@ -1,9 +1,13 @@
 package de.uhh.l2g.webservices.videoprocessor.resources;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
@@ -104,5 +108,58 @@ public class VideoConversionsResource {
 		} 
         URI uri = uriInfo.getAbsolutePathBuilder().path(videoConversionDb.getId().toString()).build();
 		return Response.created(uri).build();
+	}
+	
+	/**
+	 * Rebuilds all SMIL files with the given quality caps
+	 * @param uriInfo
+	 * @return TODO
+	 */
+	@Path("rebuild-smil")
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response rebuildSmil(Map<String,Object> map, @Context UriInfo uriInfo) {
+		if (map == null) {
+			throw new BadRequestException();
+		}
+		String[] tenants = null;
+		long maxHeight = 0;
+		long maxBitrate= 0;
+		
+		// get tenants from request body
+		ArrayList<String> tenantsList = (ArrayList<String>) map.get("tenants");
+		tenants = tenantsList.toArray(new String[0]);
+		
+		// get max height from request body
+		if (map.containsKey("maxHeight")) {
+			try {
+				maxHeight = Long.valueOf((String) map.get("maxHeight"));
+			} catch (NumberFormatException e) {
+				// no maxHeight property or could not be parsed, use default
+			}
+		}
+		
+		if (map.containsKey("maxBitrate")) {
+			try {
+				maxBitrate = Long.valueOf((String) map.get("maxBitrate"));
+			} catch (NumberFormatException e) {
+				// no maxBitrate property or could not be parsed, use default
+			}
+		}
+				
+		// pass empty videoconversion to Service as we do not want to run a new video conversion, only trigger the SMIL rebuild
+		VideoConversion v = new VideoConversion();
+		VideoConversionService vc = new VideoConversionService(v);
+		
+		long errorCount = vc.rebuildAllSmil(tenants, maxHeight, maxBitrate);
+		
+		if (errorCount > 0 ){
+			Map<String, String> errorDetails = new HashMap<>();
+			errorDetails.put("errorCount", String.valueOf(errorCount));
+			return Response.serverError().entity(errorDetails).build();
+		}
+		
+		return Response.ok().build();
 	}
 }
