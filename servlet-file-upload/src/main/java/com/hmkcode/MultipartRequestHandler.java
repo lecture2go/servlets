@@ -23,6 +23,8 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.hmkcode.vo.FileMeta;
 
@@ -30,6 +32,8 @@ import de.uhh.l2g.util.Security;
 import de.uhh.l2g.util.SyntaxManager;
 
 public class MultipartRequestHandler {
+	
+	private static final Logger logger = LogManager.getLogger(MultipartRequestHandler.class);
 
 	private static final Long MAX_SIZE = new Long("107374182400"); //100 GB
 
@@ -200,16 +204,20 @@ public class MultipartRequestHandler {
 			                } else {  // File is chunked
 			                    File assembledFile = null;
 			                    byte[] bytes = item.get();
-			                    if (chunkFrom + bytes.length != chunkTo + 1)
-			                        throw new ServletException("Unexpected length of chunk: " + bytes.length + 
+			                    if (chunkFrom + bytes.length != chunkTo + 1) {
+							    	logger.error("File upload has unexpected length of chunk  {}", bytes.length + 
 			                                " != " + (chunkTo + 1) + " - " + chunkFrom);
-								
+			                    	throw new ServletException("Unexpected length of chunk: " + bytes.length + 
+			                                " != " + (chunkTo + 1) + " - " + chunkFrom);
+			                    }
+			                        
 			                    saveChunk(storageDir, temp.getCurrentFileName(), chunkFrom, bytes, fileFullLength);
 			                    TreeMap<Long, Long> chunkStartsToLengths = getChunkStartsToLengths(storageDir, temp.getCurrentFileName());
 			                    long lengthSoFar = getCommonLength(chunkStartsToLengths);
 			                    temp.setFileSize(lengthSoFar);
 
 			                    if (lengthSoFar == fileFullLength) {
+			                    	logger.info("All chunks were uploaded for {}/{}, assemble...", storageDir, temp.getCurrentFileName());
 			                        assembledFile = assembleAndDeleteChunks(storageDir, temp.getCurrentFileName(), 
 			                                new ArrayList<Long>(chunkStartsToLengths.keySet()));
 			                    }
@@ -217,14 +225,18 @@ public class MultipartRequestHandler {
 
 							files.add(temp);
 						} catch (Exception e) {
+							logger.error(e.getMessage());
 							e.printStackTrace();
 						}
 				    }
 				}
 				
 			} catch (FileUploadException e) {
+				logger.error(e.getMessage());
 				e.printStackTrace();
 			}
+		} else {
+			logger.error("Upload request is no multipart upload, the upload was not processed");
 		}
 		
 		return files;
@@ -257,13 +269,29 @@ public class MultipartRequestHandler {
 
 	private static void saveChunk(File dir, String fileName, 
 	        long from, byte[] bytes, long fileFullLength) throws IOException {
-	    File target = new File(dir, fileName + "." + from + ".chunk");
+	    File target = new File(dir, fileName + "." + from + ".chunk");		
+		// remove all chunks from a previous upload process with the same file name
+		// is only triggered when a new upload starts
+		if (from==0) {
+			removeChunksFromPreviousUploads(dir, fileName);
+		}
+		
 	    OutputStream os = new FileOutputStream(target);
 	    try {
 	        os.write(bytes);
 	    } finally {
 	        os.close();
 	    }
+	}
+
+	private static void removeChunksFromPreviousUploads(File dir, String fileName) {
+		for (File f : dir.listFiles()) {
+	        String chunkFileName = f.getName();
+			if (chunkFileName.startsWith(fileName + ".") && 
+	                chunkFileName.endsWith(".chunk")) {
+				f.delete();
+			}
+		}		
 	}
 
 	private static TreeMap<Long, Long> getChunkStartsToLengths(File dir, 
@@ -312,6 +340,7 @@ public class MultipartRequestHandler {
 	            chunkFile.delete();
 	        }
 	    } finally {
+    		logger.info("Assembly finished");
 	        assembledOs.close();
 	    }
 	    return assembledFile;

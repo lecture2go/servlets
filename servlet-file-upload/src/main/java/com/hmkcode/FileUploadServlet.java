@@ -14,6 +14,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,6 +28,8 @@ import de.uhh.l2g.util.Security;
 //this to be used with Java Servlet 3.0 API
 @MultipartConfig 
 public class FileUploadServlet extends HttpServlet {
+	
+	private static final Logger logger = LogManager.getLogger(FileUploadServlet.class);
 	
 	private static final long serialVersionUID = 1L;
 
@@ -41,7 +45,9 @@ public class FileUploadServlet extends HttpServlet {
 		String transmittedToken = request.getHeader("X-token");
 		String expirationTime = request.getHeader("X-expiration");
 		String videoId = request.getHeader("X-videoId");
-				
+		
+		logger.info("A upload request was received for videoId {} with the transmittedToken {} and expirationTime {}", videoId, transmittedToken, expirationTime);
+		
 		String correctToken = null;
 		try {
 			correctToken = Security.getSignatureKey(Security.getSignatureKey(expirationTime, videoId));
@@ -53,9 +59,20 @@ public class FileUploadServlet extends HttpServlet {
 				correctToken == null || 
 				!transmittedToken.equals(correctToken) ||
 				System.currentTimeMillis()>Long.valueOf(expirationTime)) {
+			if (!transmittedToken.equals(correctToken))
+				logger.error("The upload request was denied because the tokens were not identical");
+			else if (System.currentTimeMillis()>Long.valueOf(expirationTime))
+				logger.error("The upload request was denied because the expiration date was exceeded");
+			else if (transmittedToken == null)
+				logger.error("The upload request was denied because the transmitted token was null");
+			else 
+				logger.error("The upload request was denied because the upload servlet generated token was null");
+
 			response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 	    	response.getWriter().print("");
 		}
+		
+		
 		
 		// 1. Upload File Using Java Servlet API
 		//files.addAll(MultipartRequestHandler.uploadByJavaServletAPI(request));			
