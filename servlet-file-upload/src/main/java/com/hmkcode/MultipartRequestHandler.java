@@ -251,7 +251,7 @@ public class MultipartRequestHandler {
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd_HH-mm");
 		String newDate = format.format(new Date()).toString();
 		if(l2gDateTime.length()>0)newDate=l2gDateTime;
-		String ret = lectureseriesNumber+"_video-"+videoId+"_"+newDate+"."+container;
+		String ret = SyntaxManager.replaceIllegalFilenameCharacters(lectureseriesNumber)+"_video-"+videoId+"_"+newDate+"."+container;
 		return ret;
 	}
 	// this method is used to get file name out of request headers
