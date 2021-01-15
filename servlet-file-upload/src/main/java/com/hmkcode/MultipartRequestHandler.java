@@ -32,35 +32,35 @@ import de.uhh.l2g.util.Security;
 import de.uhh.l2g.util.SyntaxManager;
 
 public class MultipartRequestHandler {
-	
+
 	private static final Logger logger = LogManager.getLogger(MultipartRequestHandler.class);
 
 	private static final Long MAX_SIZE = new Long("107374182400"); //100 GB
 
 	public static List<FileMeta> uploadByJavaServletAPI(HttpServletRequest request) throws IOException, ServletException{
-		
+
 		List<FileMeta> files = 	 new LinkedList<FileMeta>();
-		
+
 		// 1. Get all parts
 		Collection<Part> parts = request.getParts();
-		
+
 		// 2. Get paramter "twitter"
 		//String twitter = request.getParameter("twitter");
 
 		// 3. Go over each part
 		FileMeta temp = null;
-		for(Part part:parts){	
+		for(Part part:parts){
 
 			// 3.1 if part is multiparts "file"
 			if(part.getContentType() != null){
-				
+
 				// 3.2 Create a new FileMeta object
 				temp = new FileMeta();
 				temp.setFileName(getFilename(part));
 				temp.setFileSize(part.getSize());
 				temp.setFileType(part.getContentType());
 				temp.setContent(part.getInputStream());
-				
+
 				// 3.3 Add created FileMeta object to List<FileMeta> files
 				files.add(temp);
 
@@ -68,17 +68,17 @@ public class MultipartRequestHandler {
 		}
 		return files;
 	}
-	
+
 	public static List<FileMeta> uploadByApacheFileUpload(HttpServletRequest request) throws IOException, ServletException{
 		List<FileMeta> files = new LinkedList<FileMeta>();
-		
+
 		// 1. Check request has multipart content
 		boolean isMultipart = ServletFileUpload.isMultipartContent(request);
 		FileMeta temp = null;
-		
+
 		// 2. If yes (it has multipart "files")
 		if(isMultipart){
-			
+
 			// prepare chunked upload
 			String range = request.getHeader("Content-Range");
 		    long fileFullLength = -1;
@@ -93,14 +93,14 @@ public class MultipartRequestHandler {
 		        chunkFrom = Long.parseLong(fromAndTo[0]);
 		        chunkTo = Long.parseLong(fromAndTo[1]);
 		    }
-		    
+
 		    // set default dir, may be overwritten later on
 		    File tempDir = new File(System.getProperty("java.io.tmpdir"));  // Configure according project server environment.
 
 			// 2.1 instantiate Apache FileUpload classes
 			DiskFileItemFactory factory = new DiskFileItemFactory();
 			factory.setSizeThreshold(0);//save all to disk
-			
+
 			// set the upload temp directory, should be set to the target folder to minimize file movement after upload
 			// temporary directory needs to be transmitted by a custom "X-tempdir"-http-header
 			if (request.getHeader("X-tempdir") != null) {
@@ -109,7 +109,7 @@ public class MultipartRequestHandler {
 				factory.setRepository(tempDir);
 			}
 		    File storageDir = tempDir;
-			
+
 			ServletFileUpload upload = new ServletFileUpload(factory);
 			upload.setSizeMax(MAX_SIZE);
 			// 2.2 Parse the request
@@ -123,10 +123,11 @@ public class MultipartRequestHandler {
 				String secureFileName = "";
 				String l2gDateTime = "";
 				String videoId = "";
-				
+				boolean isSignVideo = false;
+
 				// 2.4 Go over each FileItem
 				for(FileItem item:items){
-					
+
 					// 2.5 if FileItem is not of type "file"
 				    if (item.isFormField()) {
 				    	// 2.6 Search for parameter
@@ -143,6 +144,9 @@ public class MultipartRequestHandler {
 				        if(item.getFieldName().equals("fileName") && item.getString().trim().length()>0)fileName = item.getString();
 				        if(item.getFieldName().equals("secureFileName") && item.getString().trim().length()>0)secureFileName = item.getString();
 				        if(item.getFieldName().equals("videoId") && item.getString().trim().length()>0)videoId = item.getString();
+								if (item.getFieldName().equals("isSignVideo") && "true".equals(item.getString().trim())) {
+									isSignVideo = true;
+								}
 				    } else {
 				        String itemName=item.getName();
 				        String container = itemName.split("\\.")[itemName.split("\\.").length-1].toLowerCase();//only container to lower case!
@@ -153,35 +157,37 @@ public class MultipartRequestHandler {
 						temp.setContent(item.getInputStream());
 						temp.setFileType(item.getContentType());
 						temp.setFileSize(item.getSize());
-						//upload 
+						//upload
 						File f = new File("");
 						try {
 							//there is already an uploaded media file
 							String prefix = "";
-							if(fileName.length()>0){
-								prefix = fileName.split("."+fileName.split("\\.")[fileName.split("\\.").length-1])[0];
-								itemName = prefix+"."+container;
+							String signVideoIdentifier = "";
+							if (isSignVideo && !fileName.endsWith("_sign.mp4") && !fileName.endsWith("_sign.xx")) {
+								signVideoIdentifier = "_sign";
+							}
+							if (fileName.length() > 0) {
+								prefix = fileName.split("." + fileName.split("\\.")[fileName.split("\\.").length - 1])[0];
+								itemName = prefix + signVideoIdentifier + "." + container;
 								temp.setFileName(itemName);
 								//for secure file name
-								if(secureFileName.length()>0){
-									prefix = secureFileName.split("."+secureFileName.split("\\.")[secureFileName.split("\\.").length-1])[0];
-									temp.setSecureFileName(prefix+"."+container);
+								if (secureFileName.length() > 0) {
+									prefix = secureFileName.split("." + secureFileName.split("\\.")[secureFileName.split("\\.").length - 1])[0];
+									temp.setSecureFileName(prefix + signVideoIdentifier + "." + container);
 								} else {
-									String sFN = Security.createSecureFileName()+"."+container;
-									temp.setSecureFileName(sFN);	
+									String sFN = Security.createSecureFileName() + signVideoIdentifier + "." + container;
+									temp.setSecureFileName(sFN);
 								}
-							}else{ 
+							} else if (secureFileName.endsWith(".xx")) {
 								//or this is the first upload
-								if(fileName.length()==0 && secureFileName.endsWith(".xx")){
-									itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime, videoId);
-									temp.setSecureFileName(secureFileName.replace(".xx", "."+container));
-									temp.setFileName(itemName);
-								}
+								itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime, videoId, isSignVideo);
+								temp.setSecureFileName(secureFileName.replace(".xx", signVideoIdentifier + "." + container));
+								temp.setFileName(itemName);
 							}
 							//////////// ---- //////////// ---- ////////////
 							//new file -> item is lecture2go named file?
-							if(!SyntaxManager.isL2gFileName(itemName)){
-								itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime, videoId);
+							if (!SyntaxManager.isL2gFileName(itemName)) {
+								itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime, videoId, isSignVideo);
 								temp.setFileName(itemName);
 							}
 							//video isn't open access
@@ -195,7 +201,7 @@ public class MultipartRequestHandler {
 							String[] parameter = prefix.split("\\_");
 							temp.setGenerationDate(parameter[2]+"_"+parameter[3]);
 							// 2.7 Add created FileMeta object to List<FileMeta> files
-							
+
 							if (fileFullLength < 0) {  // File is not chunked
 			                    temp.setFileSize(item.getSize());
 			                    if (f.exists()) // if file already exists, overwrite
@@ -205,12 +211,12 @@ public class MultipartRequestHandler {
 			                    File assembledFile = null;
 			                    byte[] bytes = item.get();
 			                    if (chunkFrom + bytes.length != chunkTo + 1) {
-							    	logger.error("File upload has unexpected length of chunk  {}", bytes.length + 
+							    	logger.error("File upload has unexpected length of chunk  {}", bytes.length +
 			                                " != " + (chunkTo + 1) + " - " + chunkFrom);
-			                    	throw new ServletException("Unexpected length of chunk: " + bytes.length + 
+			                    	throw new ServletException("Unexpected length of chunk: " + bytes.length +
 			                                " != " + (chunkTo + 1) + " - " + chunkFrom);
 			                    }
-			                        
+
 			                    saveChunk(storageDir, temp.getCurrentFileName(), chunkFrom, bytes, fileFullLength);
 			                    TreeMap<Long, Long> chunkStartsToLengths = getChunkStartsToLengths(storageDir, temp.getCurrentFileName());
 			                    long lengthSoFar = getCommonLength(chunkStartsToLengths);
@@ -218,7 +224,7 @@ public class MultipartRequestHandler {
 
 			                    if (lengthSoFar == fileFullLength) {
 			                    	logger.info("All chunks were uploaded for {}/{}, assemble...", storageDir, temp.getCurrentFileName());
-			                        assembledFile = assembleAndDeleteChunks(storageDir, temp.getCurrentFileName(), 
+			                        assembledFile = assembleAndDeleteChunks(storageDir, temp.getCurrentFileName(),
 			                                new ArrayList<Long>(chunkStartsToLengths.keySet()));
 			                    }
 			                }
@@ -230,7 +236,7 @@ public class MultipartRequestHandler {
 						}
 				    }
 				}
-				
+
 			} catch (FileUploadException e) {
 				logger.error(e.getMessage());
 				e.printStackTrace();
@@ -238,25 +244,25 @@ public class MultipartRequestHandler {
 		} else {
 			logger.error("Upload request is no multipart upload, the upload was not processed");
 		}
-		
+
 		return files;
 	}
 
-	private static String generateL2gFileName(String lectureseriesNumber, String container, String videoId){
-		return generateL2gFileName(lectureseriesNumber, container,"", videoId);
-	}
-
-		
-	private static String generateL2gFileName(String lectureseriesNumber, String container, String l2gDateTime, String videoId){
+	private static String generateL2gFileName(String lectureseriesNumber, String container, String l2gDateTime, String videoId, boolean isSignVideo) {
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd_HH-mm");
 		String newDate = format.format(new Date()).toString();
 		if(l2gDateTime.length()>0)newDate=l2gDateTime;
-		String ret = SyntaxManager.replaceIllegalFilenameCharacters(lectureseriesNumber)+"_video-"+videoId+"_"+newDate+"."+container;
-		return ret;
+		String signVideoIdentifier = "";
+		if (isSignVideo) {
+			signVideoIdentifier = "_sign";
+		}
+
+		return SyntaxManager.replaceIllegalFilenameCharacters(lectureseriesNumber) + "_video-" + videoId + "_" + newDate +
+				signVideoIdentifier + "." + container;
 	}
 	// this method is used to get file name out of request headers
-	// 
-	private static String getFilename(Part part) {	
+	//
+	private static String getFilename(Part part) {
 	    for (String cd : part.getHeader("content-disposition").split(";")) {
 	        if (cd.trim().startsWith("filename")) {
 	            String filename = cd.substring(cd.indexOf('=') + 1).trim().replace("\"", "");
@@ -265,17 +271,17 @@ public class MultipartRequestHandler {
 	    }
 	    return null;
 	}
-	
 
-	private static void saveChunk(File dir, String fileName, 
+
+	private static void saveChunk(File dir, String fileName,
 	        long from, byte[] bytes, long fileFullLength) throws IOException {
-	    File target = new File(dir, fileName + "." + from + ".chunk");		
+	    File target = new File(dir, fileName + "." + from + ".chunk");
 		// remove all chunks from a previous upload process with the same file name
 		// is only triggered when a new upload starts
 		if (from==0) {
 			removeChunksFromPreviousUploads(dir, fileName);
 		}
-		
+
 	    OutputStream os = new FileOutputStream(target);
 	    try {
 	        os.write(bytes);
@@ -287,19 +293,19 @@ public class MultipartRequestHandler {
 	private static void removeChunksFromPreviousUploads(File dir, String fileName) {
 		for (File f : dir.listFiles()) {
 	        String chunkFileName = f.getName();
-			if (chunkFileName.startsWith(fileName + ".") && 
+			if (chunkFileName.startsWith(fileName + ".") &&
 	                chunkFileName.endsWith(".chunk")) {
 				f.delete();
 			}
-		}		
+		}
 	}
 
-	private static TreeMap<Long, Long> getChunkStartsToLengths(File dir, 
+	private static TreeMap<Long, Long> getChunkStartsToLengths(File dir,
 	        String fileName) throws IOException {
 	    TreeMap<Long, Long> chunkStartsToLengths = new TreeMap<Long, Long>();
 	    for (File f : dir.listFiles()) {
 	        String chunkFileName = f.getName();
-	        if (chunkFileName.startsWith(fileName + ".") && 
+	        if (chunkFileName.startsWith(fileName + ".") &&
 	                chunkFileName.endsWith(".chunk")) {
 	            chunkStartsToLengths.put(Long.parseLong(chunkFileName.substring(
 	                    fileName.length() + 1, chunkFileName.length() - 6)), f.length());
@@ -315,7 +321,7 @@ public class MultipartRequestHandler {
 	    return ret;
 	}
 
-	private static File assembleAndDeleteChunks(File dir, String fileName, 
+	private static File assembleAndDeleteChunks(File dir, String fileName,
 	        List<Long> chunkStarts) throws IOException {
 	    File assembledFile = new File(dir, fileName);
 	    if (assembledFile.exists()) // if file already exists, overwrite
