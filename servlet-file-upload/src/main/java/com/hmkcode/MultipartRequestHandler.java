@@ -186,7 +186,7 @@ public class MultipartRequestHandler {
 							}
 							//////////// ---- //////////// ---- ////////////
 							//new file -> item is lecture2go named file?
-							if (!SyntaxManager.isL2gFileName(itemName)) {
+							if (!SyntaxManager.isL2gFileName(itemName, isSignVideo)) {
 								itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime, videoId, isSignVideo);
 								temp.setFileName(itemName);
 							}
