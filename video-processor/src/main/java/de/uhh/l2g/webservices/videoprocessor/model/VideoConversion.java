@@ -48,6 +48,9 @@ public class VideoConversion {
 	
 	@Column(updatable = false)
 	private String tenant;
+	
+	@Column(updatable = false)
+	private String additionalMediaIdentifier;
 
 	private String opencastId;
 
@@ -154,6 +157,20 @@ public class VideoConversion {
 	 */
 	public void setTenant(String tenant) {
 		this.tenant = tenant;
+	}
+	
+	/**
+	 * @return the additionalMediaIdentifier
+	 */
+	public String getAdditionalMediaIdentifier() {
+		return additionalMediaIdentifier;
+	}
+
+	/**
+	 * @param additionalMediaIdentifier the additionalMediaIdentifier to set
+	 */
+	public void setAdditionalMediaIdentifier(String additionalMediaIdentifier) {
+		this.additionalMediaIdentifier = additionalMediaIdentifier;
 	}
 
 	/**
