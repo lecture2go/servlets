@@ -28,6 +28,7 @@ public class VideoConversionResourceBySourceId extends VideoConversionResource {
 		// get video conversion by source ID and tenant
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("sourceId", sourceId);
+		map.put("additionalMediaIdentifier", null);
 		map.put("tenant", tenant);
 		videoConversion = GenericDao.getInstance().getFirstByMultipleFieldsValuesOrderedDesc(VideoConversion.class, map, "startTime");
 		if (videoConversion == null) {

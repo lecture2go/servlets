@@ -888,8 +888,11 @@ public class VideoConversionService {
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("sourceId", videoConversion.getSourceId());
 		map.put("tenant", videoConversion.getTenant());
-		if (hasAdditionalMediaIdentifier)
+		if (hasAdditionalMediaIdentifier) {
 			map.put("additionalMediaIdentifier", videoConversion.getAdditionalMediaIdentifier());
+		} else {
+			map.put("additionalMediaIdentifier", null);
+		}
 		List<VideoConversion> videoConversions = GenericDao.getInstance().getByMultipleFieldsValuesOrderedDesc(VideoConversion.class, map, "startTime");
 		// remove the current videoconversion from the list, we don't need to delete anything from this
 		if (exceptNewest)
@@ -921,8 +924,11 @@ public class VideoConversionService {
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("sourceId", videoConversion.getSourceId());
 		map.put("tenant", videoConversion.getTenant());
-		if (hasAdditionalMediaIdentifier)
+		if (hasAdditionalMediaIdentifier) {
 			map.put("additionalMediaIdentifier", videoConversion.getAdditionalMediaIdentifier());
+		} else {
+			map.put("additionalMediaIdentifier", null);
+		}
 		List<VideoConversion> videoConversions = GenericDao.getInstance().getByMultipleFieldsValuesOrderedDesc(VideoConversion.class, map, "startTime");
 		// remove the current videoconversion from the list, we don't need to delete anything from this
 		if (exceptNewest)
