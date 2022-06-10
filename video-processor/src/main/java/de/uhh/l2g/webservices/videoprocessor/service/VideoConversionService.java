@@ -49,9 +49,17 @@ public class VideoConversionService {
 	
 	private static final Logger logger = LogManager.getLogger(VideoConversionService.class);
 	private VideoConversion videoConversion;
+	private boolean hasAdditionalMediaIdentifier;
 	
 	public VideoConversionService(VideoConversion videoConversion) {
 		this.videoConversion = videoConversion;
+		
+		hasAdditionalMediaIdentifier = false;
+		if (!(videoConversion.getAdditionalMediaIdentifier() == null || videoConversion.getAdditionalMediaIdentifier().isEmpty())) {
+			// additional media identifier is set
+			hasAdditionalMediaIdentifier = true;
+		}
+		
 	}
 	
 	
@@ -64,10 +72,8 @@ public class VideoConversionService {
 		logger.info("A new videoConversion is started for the sourceId {} and tenant {}", videoConversion.getSourceId(), videoConversion.getTenant());
 		logger.info("Additional properties are set {}", videoConversion.getAdditionalProperties().toString());
 		
-		// delete the last videoconversion with this sourceId and tenant
-		Map<String, Object> map = new HashMap<String, Object>();
-		map.put("sourceId", videoConversion.getSourceId());
-		map.put("tenant", videoConversion.getTenant());
+		if (hasAdditionalMediaIdentifier)
+			logger.info("Is additional media with identifier {}", videoConversion.getAdditionalMediaIdentifier());
 	
 		// delete older video conversion for this sourceid and same tenant as current videoconversion
 		deleteOlderVideoConversions(false);
@@ -882,6 +888,11 @@ public class VideoConversionService {
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("sourceId", videoConversion.getSourceId());
 		map.put("tenant", videoConversion.getTenant());
+		if (hasAdditionalMediaIdentifier) {
+			map.put("additionalMediaIdentifier", videoConversion.getAdditionalMediaIdentifier());
+		} else {
+			map.put("additionalMediaIdentifier", null);
+		}
 		List<VideoConversion> videoConversions = GenericDao.getInstance().getByMultipleFieldsValuesOrderedDesc(VideoConversion.class, map, "startTime");
 		// remove the current videoconversion from the list, we don't need to delete anything from this
 		if (exceptNewest)
@@ -913,6 +924,11 @@ public class VideoConversionService {
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("sourceId", videoConversion.getSourceId());
 		map.put("tenant", videoConversion.getTenant());
+		if (hasAdditionalMediaIdentifier) {
+			map.put("additionalMediaIdentifier", videoConversion.getAdditionalMediaIdentifier());
+		} else {
+			map.put("additionalMediaIdentifier", null);
+		}
 		List<VideoConversion> videoConversions = GenericDao.getInstance().getByMultipleFieldsValuesOrderedDesc(VideoConversion.class, map, "startTime");
 		// remove the current videoconversion from the list, we don't need to delete anything from this
 		if (exceptNewest)

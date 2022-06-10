@@ -312,7 +312,12 @@ public class GenericDao {
         for (String k : ((Map<String, Object>) fieldsValuesMap).keySet()) {
         	String key = k;
         	Object value = fieldsValuesMap.get(k);
-        	Predicate predicate = builder.and(builder.equal(rootEntry.get(key),value));
+        	Predicate predicate;
+        	if (value == null) {
+        		predicate = builder.and(builder.isNull(rootEntry.get(key)));
+        	} else {
+            	predicate = builder.and(builder.equal(rootEntry.get(key),value));
+        	}
         	predicateArray[counter] = predicate;
         	counter++;
 		}
