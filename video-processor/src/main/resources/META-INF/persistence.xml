@@ -9,7 +9,7 @@
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
         <exclude-unlisted-classes>false</exclude-unlisted-classes>
         <properties>
-            <property name="hibernate.connection.url" value="jdbc:mysql://localhost/videoprocessor?autoReconnect=true" />
+            <property name="hibernate.connection.url" value="jdbc:mysql://localhost/videoprocessor?autoReconnect=true&amp;serverTimezone=UTC" />
             <property name="hibernate.connection.driver_class" value="com.mysql.jdbc.Driver" />
             <property name="hibernate.connection.username" value="root" />
             <property name="hibernate.connection.password" value="" />
