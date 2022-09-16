@@ -616,10 +616,12 @@ public class VideoConversionService {
 	 * @return a list of createdVideo
 	 */
 	private List<CreatedFile> mapMediaToCreatedFiles(List<Medium> media) {
+		String videoIdentifier = "video";
+		
 		List<CreatedFile> createdFiles = new ArrayList<CreatedFile>();
 		for(Medium video: media) {
 			// map
-			if (video.getIdentifier().toLowerCase().startsWith("video")) {
+			if (video.getIdentifier().toLowerCase().startsWith(videoIdentifier) || video.getMimetype().toLowerCase().startsWith(videoIdentifier)) {
 				CreatedVideo createdVideo = new CreatedVideo();
 				// set reference to videoConversion object
 				createdVideo.setVideoConversion(videoConversion);
