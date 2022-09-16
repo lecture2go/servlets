@@ -911,7 +911,9 @@ public class VideoConversionService {
 		
 		if (!oldVideoConversions.isEmpty()) {
 			for (VideoConversion oldVideoConversion: oldVideoConversions) {
-				OpencastApiCall.deleteEvent(oldVideoConversion.getOpencastId());
+				if (oldVideoConversion.getOpencastId() != null) {
+					OpencastApiCall.deleteEvent(oldVideoConversion.getOpencastId());
+				}
 			}
 		}
 	}
@@ -934,6 +936,9 @@ public class VideoConversionService {
 		if (exceptNewest)
 			videoConversions.remove(0);
 		for (VideoConversion olderVideoConversion: videoConversions) {
+			if (olderVideoConversion.getOpencastId() != null) {
+				OpencastApiCall.deleteEvent(olderVideoConversion.getOpencastId());
+			}
 			cleanup(olderVideoConversion);
 		}
 	}
