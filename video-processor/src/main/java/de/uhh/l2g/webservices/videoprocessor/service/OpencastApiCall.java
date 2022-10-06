@@ -205,11 +205,11 @@ public class OpencastApiCall {
 			// deletion was successfull
 			return true;
 		case 404:
-			// event id not found
-			throw new NotFoundException();
+			// event id not found, this may happen if the event was deleted within opencast itself
+			return false;
 		default:
 			// other general error
-			throw new WebApplicationException();
+			throw new WebApplicationException("deletion went wrong, http status from OC: " + response.getStatus());
 		}
 	}
 	

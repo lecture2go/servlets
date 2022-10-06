@@ -53,7 +53,7 @@ public class Medium {
 	@JsonProperty("duration")
 	private Integer duration;
 	@JsonProperty("size")
-	private Integer size;
+	private Long size;
 	@JsonProperty("framecount")
 	private Integer framecount;
 	@JsonProperty("checksum")
@@ -160,12 +160,12 @@ public class Medium {
 	}
 	
 	@JsonProperty("size")
-	public Integer getSize() {
+	public Long getSize() {
 		return size;
 	}
 	
 	@JsonProperty("size")
-	public void setSize(Integer size) {
+	public void setSize(Long size) {
 		this.size = size;
 	}
 	

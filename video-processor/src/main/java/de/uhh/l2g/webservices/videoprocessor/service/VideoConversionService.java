@@ -140,6 +140,8 @@ public class VideoConversionService {
 			try {
 				retrieveAndHandleMediaFiles();
 			} catch (Exception e) {
+				persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_RETRIEVING_VIDEO_METADATA_FROM_OC, true);
+				e.printStackTrace();
 				return;
 			}
 			
@@ -616,10 +618,12 @@ public class VideoConversionService {
 	 * @return a list of createdVideo
 	 */
 	private List<CreatedFile> mapMediaToCreatedFiles(List<Medium> media) {
+		String videoIdentifier = "video";
+		
 		List<CreatedFile> createdFiles = new ArrayList<CreatedFile>();
 		for(Medium video: media) {
 			// map
-			if (video.getIdentifier().toLowerCase().startsWith("video")) {
+			if (video.getIdentifier().toLowerCase().startsWith(videoIdentifier) || video.getMimetype().toLowerCase().startsWith(videoIdentifier)) {
 				CreatedVideo createdVideo = new CreatedVideo();
 				// set reference to videoConversion object
 				createdVideo.setVideoConversion(videoConversion);
@@ -911,7 +915,9 @@ public class VideoConversionService {
 		
 		if (!oldVideoConversions.isEmpty()) {
 			for (VideoConversion oldVideoConversion: oldVideoConversions) {
-				OpencastApiCall.deleteEvent(oldVideoConversion.getOpencastId());
+				if (oldVideoConversion.getOpencastId() != null) {
+					OpencastApiCall.deleteEvent(oldVideoConversion.getOpencastId());
+				}
 			}
 		}
 	}
@@ -934,6 +940,9 @@ public class VideoConversionService {
 		if (exceptNewest)
 			videoConversions.remove(0);
 		for (VideoConversion olderVideoConversion: videoConversions) {
+			if (olderVideoConversion.getOpencastId() != null) {
+				OpencastApiCall.deleteEvent(olderVideoConversion.getOpencastId());
+			}
 			cleanup(olderVideoConversion);
 		}
 	}
