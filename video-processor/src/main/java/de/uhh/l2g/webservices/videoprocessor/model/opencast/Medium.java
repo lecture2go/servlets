@@ -36,7 +36,7 @@ public class Medium {
     @JsonProperty("identifier")
     private String identifier;
     @JsonProperty("size")
-    private Integer size;
+    private Long size;
     @JsonProperty("streams")
     private Streams streams;
     @JsonProperty("checksum")
@@ -88,12 +88,12 @@ public class Medium {
     }
 
     @JsonProperty("size")
-    public Integer getSize() {
+    public Long getSize() {
         return size;
     }
 
     @JsonProperty("size")
-    public void setSize(Integer size) {
+    public void setSize(Long size) {
         this.size = size;
     }
 

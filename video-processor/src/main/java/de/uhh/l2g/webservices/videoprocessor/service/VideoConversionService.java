@@ -140,6 +140,8 @@ public class VideoConversionService {
 			try {
 				retrieveAndHandleMediaFiles();
 			} catch (Exception e) {
+				persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_RETRIEVING_VIDEO_METADATA_FROM_OC, true);
+				e.printStackTrace();
 				return;
 			}
 			
