@@ -25,6 +25,14 @@
 			<param-name>downloadServerName</param-name>
 			<param-value>localhost</param-value>
 		</init-param>
+		<init-param>
+			<param-name>folderPrefixWhitelist</param-name> 
+    		<param-value>/folder/a_,/folder2</param-value> 
+    	</init-param>
+    	<init-param>
+    		<param-name>extensionWhitelist</param-name> 
+    		<param-value>mp4,mp3,m4a,m4v,pdf</param-value> 
+    	</init-param>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>Lecture2GoDownload</servlet-name>

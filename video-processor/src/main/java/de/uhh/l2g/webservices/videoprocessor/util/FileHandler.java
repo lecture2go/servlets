@@ -50,4 +50,14 @@ public class FileHandler {
 	public static boolean checkIfFileExists(String filePath) {
 		return (new File(filePath).isFile());
 	}
+	
+	/**
+	 * Copies the file
+	 * @param sourcePath the current path
+	 * @param targetPath the target path
+	 * @throws IOException
+	 */
+	public static void copy(String sourcePath, String targetPath) throws IOException {
+		FileUtils.copyFile(FileUtils.getFile(sourcePath), FileUtils.getFile(targetPath));
+	}
 }
