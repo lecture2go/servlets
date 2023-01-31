@@ -18,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 public class DownloadManager extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private String repositoryRoot="";
+	private String repositorySubRoot="";
 	private String downloadServerName="";
 	private String[] folderPrefixWhitelist;
 	private String[] extensionWhitelist;
@@ -26,6 +27,7 @@ public class DownloadManager extends HttpServlet {
 	public void init() throws ServletException {
     	//init param
 		repositoryRoot=getServletConfig().getInitParameter("repositoryRoot");
+		repositorySubRoot=getServletConfig().getInitParameter("repositorySubRoot");
 		downloadServerName=getServletConfig().getInitParameter("downloadServerName");
 		folderPrefixWhitelist = getServletConfig().getInitParameter("folderPrefixWhitelist").split(",");   
 		extensionWhitelist = getServletConfig().getInitParameter("extensionWhitelist").split(",");   
@@ -36,7 +38,13 @@ public class DownloadManager extends HttpServlet {
 	 */
 	@SuppressWarnings("unused")
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String downloadPath = repositoryRoot+request.getParameter("downloadPath");
+	    	String dp = request.getParameter("downloadPath");
+		String[] requestedDownloadPath = dp.split("/");
+		String downloadPath = "";
+		
+		if(requestedDownloadPath.length==4)downloadPath = repositoryRoot+"/"+requestedDownloadPath[1] + "/" + repositorySubRoot + "/" + requestedDownloadPath[2]+"/"+requestedDownloadPath[3];
+		if(requestedDownloadPath.length==5)downloadPath = repositoryRoot+"/"+requestedDownloadPath[1] + "/" + requestedDownloadPath[2]+"/"+requestedDownloadPath[3]+"/"+requestedDownloadPath[4];
+		
 		String downloadAllowed = request.getParameter("downloadAllowed");
 		String dsn = request.getServerName();
 		
