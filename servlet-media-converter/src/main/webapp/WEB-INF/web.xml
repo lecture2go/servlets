@@ -3,7 +3,7 @@
 	xmlns="http://java.sun.com/xml/ns/javaee"
 	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
 	version="3.0">
-	<display-name>servlet-media-converter</display-name>
+	<display-name>servlet-file-download</display-name>
 	<welcome-file-list>
 		<welcome-file>index.html</welcome-file>
 		<welcome-file>index.htm</welcome-file>
@@ -14,33 +14,33 @@
 	</welcome-file-list>
 
 	<servlet>
-		<display-name>Lecture2GoConverter</display-name>
-		<servlet-name>Lecture2GoConverter</servlet-name>
-		<servlet-class>ConverterManager</servlet-class>
+		<display-name>Lecture2GoDownload</display-name>
+		<servlet-name>Lecture2GoDownload</servlet-name>
+		<servlet-class>DownloadManager</servlet-class>
 		<init-param>
-			<param-name>converterServerName</param-name>
+			<param-name>repositoryRoot</param-name>
+			<param-value>/repositoryRoo/folder</param-value>
+		</init-param>
+		<init-param>
+			<param-name>repositorySubRoot</param-name>
+			<param-value>sub_root_folder</param-value>
+		</init-param>
+		<init-param>
+			<param-name>downloadServerName</param-name>
 			<param-value>localhost</param-value>
 		</init-param>
 		<init-param>
-			<param-name>maxQueue</param-name>
-			<param-value>3</param-value>
-		</init-param>
-		<init-param>
-			<param-name>ffmpegBin</param-name>
-			<param-value>/usr/local/bin/ffmpeg</param-value>
-		</init-param>
-	    <init-param>
-	      	<param-name>ffmpegConvertFileToMp4CommandParameter</param-name>
-	      	<param-value>-f mp4 -c:v libx264 -preset slow -b:v 650k -r 25 -bufsize 175k -strict -2 -c:a aac -ar 44100 -b:a 64k -ac 1</param-value>
-	    </init-param>
-	    <init-param>
-	      	<param-name>ffmpegExtractMp3FileFromMp4</param-name>
-	      	<param-value>-f mp3 -vn</param-value>
-	    </init-param>
+			<param-name>folderPrefixWhitelist</param-name> 
+    		<param-value>/folder/a_,/folder1</param-value> 
+    	</init-param>
+    	<init-param>
+    		<param-name>extensionWhitelist</param-name> 
+    		<param-value>mp4,mp3,m4a,m4v,pdf</param-value> 
+    	</init-param>
 	</servlet>
 	<servlet-mapping>
-		<servlet-name>Lecture2GoConverter</servlet-name>
-		<url-pattern>/convertFile</url-pattern>
+		<servlet-name>Lecture2GoDownload</servlet-name>
+		<url-pattern>/getFile</url-pattern>
 	</servlet-mapping>
 
 </web-app>
