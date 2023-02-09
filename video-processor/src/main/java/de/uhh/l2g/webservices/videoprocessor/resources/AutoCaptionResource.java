@@ -47,7 +47,7 @@ public class AutoCaptionResource {
 	}
 	
     /**
-     * Returns a autoCaption as JSON
+     * Returns an autoCaption as JSON
      *
      * @return the autoCaption with the given id, or a NOT FOUND status code ifa utoCaption not exists
      */
@@ -74,5 +74,22 @@ public class AutoCaptionResource {
 	public void putAutoCaptionFormData(@FormParam("message") Boolean success) {
 		AutoCaptionService ac = new AutoCaptionService(autoCaption);
 		ac.handleS2TResponse(success);
+	}
+	
+    /**
+     * Deletes an autoCaption
+     *
+     * @return a response with a status code 200 (ok), or a NOT FOUND status code via the ExceptionMapper
+     */
+	@DELETE
+	public Response deleteAutoCaption() {
+		// check if tenant is incorrect
+		if (!Objects.equals(autoCaption.getTenant(),tenant)) {
+            throw new NotFoundException();
+		}
+		AutoCaptionService ac = new AutoCaptionService(autoCaption);
+		ac.delete();
+		
+		return Response.ok().build();
 	}
 }

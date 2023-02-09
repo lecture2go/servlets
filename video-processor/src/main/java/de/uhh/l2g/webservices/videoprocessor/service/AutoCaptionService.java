@@ -2,6 +2,9 @@ package de.uhh.l2g.webservices.videoprocessor.service;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.WebApplicationException;
@@ -33,6 +36,9 @@ public class AutoCaptionService {
 		logger.info("A new autoCaptioning is started for the sourceId {} and tenant {}", autoCaption.getSourceId(), autoCaption.getTenant());
 		logger.info("Additional properties are set {}", autoCaption.getAdditionalProperties().toString());
 		
+		// delete older auto captionsfor this sourceid and same tenant as current autocaption
+		deleteOlderAutoCaptions(false);
+		
 		// persist a new autocaption object
 		autoCaption = GenericDao.getInstance().save(autoCaption);
 		
@@ -53,6 +59,7 @@ public class AutoCaptionService {
 		
 		String targetFilePath = FilenameUtils.concat(autoCaption.getTargetDirectory(), targetFilename);
 		autoCaption.setTargetFilePath(targetFilePath);
+		autoCaption = GenericDao.getInstance().update(autoCaption);
 		
 		try {
 			FileHandler.copy(autoCaption.getSourceFilePath(), autoCaption.getTargetFilePath());
@@ -96,7 +103,9 @@ public class AutoCaptionService {
 			// the autocaption was successful
 			persistAutoCaptionStatus(autoCaption, AutoCaptionStatus.S2T_SUCCEEDED);
 			
-			// the files are already created in the target directory folder by the speech2text engine, no further processing is needed
+			// delete the working copy
+			logger.info("Delete the temporary working file {} from id: {} / sourceId: {}.", autoCaption.getTargetFilePath(), autoCaption.getId(), autoCaption.getSourceId());
+			FileHandler.deleteIfExists(autoCaption.getTargetFilePath());
 
 			// the process is finished
 			// this status change count towards the elapsed time
@@ -106,6 +115,30 @@ public class AutoCaptionService {
 			// this status change count towards the elapsed time
 			persistAutoCaptionStatus(autoCaption, AutoCaptionStatus.ERROR_S2T_FAILED, true);
 		}
+	}
+	
+	/**
+	 * The current autoCaption object is deleted
+	 */
+	public void delete() {
+		logger.info("Delete everything for autocaption with id: {} / sourceId: {} / tenant: {}", autoCaption.getId(), autoCaption.getSourceId(), autoCaption.getTenant());
+		
+		// stop current subtitle2go process
+		try {
+			if (autoCaption.getStatus().equals(AutoCaptionStatus.S2T_RUNNING) && autoCaption.getSpeech2TextId() != null) {
+				logger.info("There is a subtitle process running, try to stop it. for id: {} / sourceId: {} / tenant: {}", autoCaption.getId(), autoCaption.getSourceId(), autoCaption.getTenant());
+				persistAutoCaptionStatus(autoCaption, AutoCaptionStatus.S2T_STOPPING);
+				Subtitle2GoApiCall.stopAutoCaptionRequest(autoCaption.getSpeech2TextId());
+			}
+		}
+		catch(WebApplicationException e) {
+			persistAutoCaptionStatus(autoCaption, AutoCaptionStatus.ERROR_S2T_STOPPING);
+		} 
+		
+		// delete working copy of file
+		FileHandler.deleteIfExists(autoCaption.getTargetFilePath());
+		
+		persistAutoCaptionStatus(autoCaption, AutoCaptionStatus.DELETED);
 	}
 	
 	
@@ -136,5 +169,27 @@ public class AutoCaptionService {
 		
 		GenericDao.getInstance().update(autoCaption);
 		logger.info("The new status of the autoCaption with id: {} / source id: {} is {}", autoCaption.getId(), autoCaption.getSourceId(), status);
+	}
+	
+	/**
+	 * Deletes alls older auto captions for the same sourceId and tenant as the current autocaption
+	 * @param exceptNewest exclude the newest from deleting
+	 */
+	private void deleteOlderAutoCaptions(boolean exceptNewest) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("sourceId", autoCaption.getSourceId());
+		map.put("tenant", autoCaption.getTenant());
+		
+		List<AutoCaption> autoCaptions = GenericDao.getInstance().getByMultipleFieldsValuesOrderedDesc(AutoCaption.class, map, "startTime");
+		// remove the current videoconversion from the list, we don't need to delete anything from this
+		if (exceptNewest)
+			autoCaptions.remove(0);
+		for (AutoCaption olderAutoCaption: autoCaptions) {
+			if (!olderAutoCaption.getStatus().equals(AutoCaptionStatus.DELETED)) {
+				AutoCaptionService ac = new AutoCaptionService(olderAutoCaption);
+				ac.delete();
+			}
+			
+		}
 	}
 }

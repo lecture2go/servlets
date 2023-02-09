@@ -37,6 +37,7 @@ public class Subtitle2GoApiCall {
 	private static Config config = Config.getInstance();
 	
 	public static String startEndpoint = "start";
+	public static String stopEndpoint = "stop";
 
 	
 	/**
@@ -46,7 +47,7 @@ public class Subtitle2GoApiCall {
 	 * @param language the language of the video
 	 * @param id the id
 	 * @param additionalProperties additional properties
-	 * @return the response from the opencast API
+	 * @return the response from the subtitle2go API
 	 */
 	static String postAutoCaptionRequest(String filePath, Long id, String language, Map<String, Object> additionalProperties) {
 		// prepare the api call
@@ -55,31 +56,14 @@ public class Subtitle2GoApiCall {
 		// create the payload necessary for the the request
 		String jsonPayload = createStartCaptionJson(id, filePath, language, additionalProperties);
 
-		// the file is sent as a stream to the API
-		FileInputStream fileInputStream = null;
-		try {
-			fileInputStream = new FileInputStream(filePath);
-			
-//			multiPart.bodyPart(new StreamDataBodyPart("presenter",fileInputStream,FilenameUtils.getName(filepath)));
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
 		// send the post request
 		Response response = null;
 		try {
 			response = target.request().post(Entity.entity(jsonPayload, MediaType.APPLICATION_JSON));
 		} catch (Exception e) {
-			// on failure close the inputStream
-			IOUtils.closeQuietly(fileInputStream);
 			throw new WebApplicationException();
 		}
-
-		// after sending the request, close the inputStream
-		IOUtils.closeQuietly(fileInputStream);
 		
-		//TODO correct responses and how to obtain ID of subtitle2go
 		switch(response.getStatus()) {
 			case 200:
 				// everything is fine
@@ -98,7 +82,10 @@ public class Subtitle2GoApiCall {
 	
 	/**
 	 * Creates an subtitle2go-compatible processing json string (used for a new auto captioning request)
-	 * @param workflow 
+	 * @param id
+	 * @param filename
+	 * @param language
+	 * @param additionalProperties
 	 * @return the processing info as as json string
 	 */
 	private static String createStartCaptionJson(Long id, String filename, String language, Map<String, Object> additionalProperties) {
@@ -128,6 +115,63 @@ public class Subtitle2GoApiCall {
 				
 		return configurationAsJson;
 	}
+	
+	/**
+	 * Sends a post request to the subtitle2go API.
+	 * This stops an existing subtitle2go process
+	 * @param filepath the path of the file which will be converted
+	 * @return the response from the subtitle2go API
+	 */
+	static Boolean stopAutoCaptionRequest(String speech2TextId) {
+		// prepare the api call
+		WebTarget target = prepareApiCall(stopEndpoint);
+			
+		// create the payload necessary for the the request
+		String jsonPayload = createStopCaptionJson(speech2TextId);
+
+		// send the post request
+		Response response = null;
+		try {
+			response = target.request().post(Entity.entity(jsonPayload, MediaType.APPLICATION_JSON));
+		} catch (Exception e) {
+			throw new WebApplicationException();
+		}
+
+		switch(response.getStatus()) {
+			case 200:
+				// everything is fine
+			    Boolean stopped = Boolean.valueOf(response.readEntity(String.class));
+				return stopped;
+			case 400:
+				// API call has errors
+				throw new BadRequestException();
+			default:
+				// other general error
+				throw new WebApplicationException();
+		}
+	}
+	
+	/**
+	 * Creates an subtitle2go-compatible processing json string (used for stopping an auto captioning request)
+	 * @param speech2TextId 
+	 * @return the stop payload as as json string
+	 */
+	private static String createStopCaptionJson(String speech2TextId) {
+		Map<String, String> configuration = new HashMap<String,String>();
+		configuration.put("speech2TextId",speech2TextId);
+		
+		String configurationAsJson = null;
+		try {
+			configurationAsJson = new ObjectMapper().writeValueAsString(configuration);
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+				
+		return configurationAsJson;
+	}
+	
+	
 	/**
 	 * Prepares the API call
 	 * @param endpoint the endpoint which should be called
