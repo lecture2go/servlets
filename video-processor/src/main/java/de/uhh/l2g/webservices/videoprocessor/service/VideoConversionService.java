@@ -18,6 +18,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -238,6 +239,63 @@ public class VideoConversionService {
 			}
 			persistVideoConversionStatus(videoConversion, VideoConversionStatus.FINISHED);
 		}
+		return true;
+	}
+	
+	
+	/**
+	 * Transfers the files
+	 * If the rename happens before any files are created, it will only be set in the database, so the current name can be fetched after downloading
+	 * If there are created files, they will be renamed.
+	 * @param filename
+	 */
+	public boolean handleTransferRequest(String targetDirectory) {
+		logger.info("Transfer Files for videoConversion with id: {} / sourceId: {} / tenant: {} to {}", videoConversion.getId(), videoConversion.getSourceId(), videoConversion.getTenant(), targetDirectory);
+		
+		if (targetDirectory.equals(videoConversion.getTargetDirectory())) {
+			return false;
+		}
+		
+		String newSourceFilePath = FilenameUtils.concat(targetDirectory, videoConversion.getFilename());
+
+		// move all created files to new directory
+		Set<CreatedFile> createdFiles = videoConversion.getCreatedFiles();
+		if (!createdFiles.isEmpty()) {
+			for (CreatedFile createdFile: createdFiles) {
+				String oldFilePath = createdFile.getFilePath();
+				String newFilePath = FilenameUtils.concat(targetDirectory, createdFile.getFilename());
+				createdFile.setFilePath(newFilePath);
+				GenericDao.getInstance().update(createdFile);
+				try {
+					// there may be cases where other services have already renamed the file (e.g. l2go handles the audio-file), check for those cases
+					if(FileHandler.checkIfFileExists(oldFilePath)) {
+						// the file exists, move/ rename it!
+						File newFile = new File(newFilePath);
+						if (FileUtils.isSymlink(newFile)) {
+							newFile.delete();
+						}
+						FileHandler.rename(oldFilePath, newFilePath);
+						persistVideoConversionStatus(videoConversion, VideoConversionStatus.RENAMED);
+
+						// add a symlink in the old directory pointing to the new location
+						FileHandler.createSymlink(oldFilePath, newFilePath);						
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+					persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_RENAMING);
+					// if one file can not be moved, stop the renaming process 
+					return false;
+				}
+				
+			}
+			persistVideoConversionStatus(videoConversion, VideoConversionStatus.FINISHED);
+		}
+		
+		// finally update the videoconversion data
+		videoConversion.setSourceFilePath(newSourceFilePath);
+		videoConversion.setTargetDirectory(targetDirectory);
+		GenericDao.getInstance().update(videoConversion);
+		
 		return true;
 	}
 	

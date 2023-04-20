@@ -91,6 +91,30 @@ public class VideoConversionResource {
 		}
 	}
 	
+	
+    /**
+     * Transfer the files of an existing videoConversion
+     *
+     * @param filenameMap a simple key value pair with a "targetFilePath" as key and the necessary value
+     * @return a 200 ok response if successful, or a INTERNAL SERVER ERROR status code if something went wrong
+     */
+	@Path("transfer")
+	@PUT
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response putTransferForVideoConversion(HashMap<String,String> filenameMap) {
+		// check if tenant is incorrect
+		if (!Objects.equals(videoConversion.getTenant(),tenant)) {
+            throw new NotFoundException();
+		}
+		VideoConversionService vc = new VideoConversionService(videoConversion);
+		if (vc.handleTransferRequest(filenameMap.get("targetDirectory"))) {
+			return Response.ok().build();
+		} else {
+			throw new InternalServerErrorException();
+		}
+	}
+	
     /**
      * Passes a success or failure message to the videoConversion
      * This this used for notify this webservice if the video conversion was successful or not
