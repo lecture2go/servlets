@@ -36,6 +36,8 @@ public class MultipartRequestHandler {
 	private static final Logger logger = LogManager.getLogger(MultipartRequestHandler.class);
 
 	private static final Long MAX_SIZE = new Long("107374182400"); //100 GB
+	
+	private static final String[] whitelistedFileExtensions = {"mp4", "mp3", "m4a", "m4v", "png", "jpg", "jpeg", "pdf", "vtt", "srt"};
 
 	public static List<FileMeta> uploadByJavaServletAPI(HttpServletRequest request) throws IOException, ServletException{
 
@@ -127,29 +129,60 @@ public class MultipartRequestHandler {
 
 				// 2.4 Go over each FileItem
 				for(FileItem item:items){
-
 					// 2.5 if FileItem is not of type "file"
 				    if (item.isFormField()) {
 				    	// 2.6 Search for parameter
 				        if(item.getFieldName().equals("repository")){
 				        	repository = item.getString();
+				        	
 				        	// only allow repositories which are beneath the given file folder
 				        	if (!repository.startsWith(Security.getRepositoryRoot())) {
+				        		logger.error("Directory " + repository + " is forbidden because it is no subdirectory of + " + Security.getRepositoryRoot());
+				        		return null;
+				        	}
+				        	if (!repository.equals(request.getHeader("X-targetDir"))) {
+				        		logger.error("Invalid target directory.");
 				        		return null;
 				        	}
 				        }
 				        if(item.getFieldName().equals("l2gDateTime"))l2gDateTime = item.getString();
 				        if(item.getFieldName().equals("openaccess"))openaccess = item.getString();
 				        if(item.getFieldName().equals("lectureseriesNumber") && item.getString().trim().length()>0)lectureseriesNumber = item.getString();
-				        if(item.getFieldName().equals("fileName") && item.getString().trim().length()>0)fileName = item.getString();
-				        if(item.getFieldName().equals("secureFileName") && item.getString().trim().length()>0)secureFileName = item.getString();
+				        if(item.getFieldName().equals("fileName") && item.getString().trim().length()>0) {
+				        	fileName = item.getString();
+							// check if payload differs from header data which is used for the hash - this prohibits upload to other destinations
+				        	if (openaccess.equals("1") && !request.getHeader("X-targetFilename").equals(fileName)) {
+				        		logger.error("Invalid target filename.");
+								return null;
+							}
+			        	}
+				        if(item.getFieldName().equals("secureFileName") && item.getString().trim().length()>0) {
+				        	secureFileName = item.getString();
+							// check if payload differs from header data which is used for the hash - this prohibits upload to other destinations
+				        	if (openaccess.equals("0") && !request.getHeader("X-targetFilename").equals(secureFileName)) {
+				        		logger.error("Invalid target filename.");
+								return null;
+							}
+				        }
 				        if(item.getFieldName().equals("videoId") && item.getString().trim().length()>0)videoId = item.getString();
-								if (item.getFieldName().equals("isSignVideo") && "true".equals(item.getString().trim())) {
-									isSignVideo = true;
-								}
+						if (item.getFieldName().equals("isSignVideo") && "true".equals(item.getString().trim())) {
+							isSignVideo = true;
+						}
 				    } else {
 				        String itemName=item.getName();
 				        String container = itemName.split("\\.")[itemName.split("\\.").length-1].toLowerCase();//only container to lower case!
+				        boolean extensionAllowed = false;
+				        for (String whitelistedFileExtension: whitelistedFileExtensions) {
+				        	if (container.toLowerCase().equals(whitelistedFileExtension)) {
+				        		extensionAllowed = true;
+				        	}
+				        }
+				        
+				        if (!extensionAllowed) {
+			        		logger.error("Invalid file extension.");
+			        		return null;
+				        }
+				        
 				        // 2.7 Create FileMeta object
 				    	temp = new FileMeta();
 				    	temp.setOpenAccess(openaccess);
