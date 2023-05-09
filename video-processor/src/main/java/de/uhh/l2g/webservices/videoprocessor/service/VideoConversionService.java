@@ -264,11 +264,10 @@ public class VideoConversionService {
 			for (CreatedFile createdFile: createdFiles) {
 				String oldFilePath = createdFile.getFilePath();
 				String newFilePath = FilenameUtils.concat(targetDirectory, createdFile.getFilename());
-				createdFile.setFilePath(newFilePath);
-				GenericDao.getInstance().update(createdFile);
 				try {
-					// there may be cases where other services have already renamed the file (e.g. l2go handles the audio-file), check for those cases
-					if(FileHandler.checkIfFileExists(oldFilePath)) {
+					// there may be cases where other services have already moved the file (e.g. l2go handles the audio-file), check for those cases
+					// do not proceed it old file is a symlink, these would be already transfered files (e.g mp3), with a symlink in the old folder
+					if(FileHandler.checkIfFileExists(oldFilePath) && !FileUtils.isSymlink(new File(oldFilePath))) {
 						// the file exists, move/ rename it!
 						File newFile = new File(newFilePath);
 						if (FileUtils.isSymlink(newFile)) {
@@ -278,8 +277,11 @@ public class VideoConversionService {
 						persistVideoConversionStatus(videoConversion, VideoConversionStatus.RENAMED);
 
 						// add a symlink in the old directory pointing to the new location
-						FileHandler.createSymlink(oldFilePath, newFilePath);						
-					}
+						FileHandler.createSymlink(oldFilePath, newFilePath);
+					} 
+					// update the database to the new path
+					createdFile.setFilePath(newFilePath);
+					GenericDao.getInstance().update(createdFile);
 				} catch (IOException e) {
 					e.printStackTrace();
 					persistVideoConversionStatus(videoConversion, VideoConversionStatus.ERROR_RENAMING);
