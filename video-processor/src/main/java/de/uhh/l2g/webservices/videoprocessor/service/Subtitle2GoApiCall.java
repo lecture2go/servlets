@@ -1,6 +1,7 @@
 package de.uhh.l2g.webservices.videoprocessor.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.FileInputStream;
@@ -38,7 +39,35 @@ public class Subtitle2GoApiCall {
 	
 	public static String startEndpoint = "start";
 	public static String stopEndpoint = "stop";
+	public static String loadEndpoint = "load";
 
+	
+	/**
+	 * Sends a get request to the subtitle2go API.
+	 * This checks if subitle2go currently takes new jobs
+	 * @return true if subtitle2go takes new jobs, false if not
+	 */
+	public static Boolean takesJob() {
+		// prepare the api call
+		WebTarget target = prepareApiCall(loadEndpoint);
+		
+		// send the get request
+		Response response = null;
+		try {
+			response = target.request().get();
+			if(response.getStatus() == Response.Status.OK.getStatusCode()) {
+			    String responseAsString = response.readEntity(String.class);
+			    JsonNode takesJobAsJson = new ObjectMapper().readTree(responseAsString).get("takes_job");
+			    if (takesJobAsJson != null) {
+			    	boolean takesJob = takesJobAsJson.asBoolean();
+			    	return takesJob;
+			    }
+			}
+		} catch (Exception e) {
+			throw new WebApplicationException();
+		}
+		return false;
+	}
 	
 	/**
 	 * Sends a post request to the subtitle2go API.

@@ -20,7 +20,7 @@ import de.uhh.l2g.webservices.videoprocessor.model.AutoCaptionStatus;
 import de.uhh.l2g.webservices.videoprocessor.util.FileHandler;
 
 public class AutoCaptionService {
-	private static final Logger logger = LogManager.getLogger(VideoConversionService.class);
+	private static final Logger logger = LogManager.getLogger(AutoCaptionService.class);
 	private AutoCaption autoCaption;
 	
 	public AutoCaptionService(AutoCaption autoCaption) {
@@ -69,6 +69,50 @@ public class AutoCaptionService {
 			return null;
 		}
 
+		logger.info("Check if Speech2Text engine accepts job...");
+		// check if subtitle2go takes job
+		if (Subtitle2GoApiCall.takesJob()) {
+			if (GenericDao.getInstance().getByFieldValue(AutoCaption.class, "status", AutoCaptionStatus.S2T_QUEUED).size()>0) {
+				logger.info("Speech2Text engine does currently accept jobs, but other jobs are queued, add autocaption with id: {} / sourceId: {} to queue.", autoCaption.getId(), autoCaption.getSourceId());
+				persistAutoCaptionStatus(autoCaption, AutoCaptionStatus.S2T_QUEUED, true);
+			} else {
+				logger.info("Speech2Text engine accepts jobs, start the automatic captioning process");
+				// create a new auto captioning via the speech2text API
+				try {
+					// post request to speech2text API
+					String speech2TextId = Subtitle2GoApiCall.postAutoCaptionRequest(autoCaption.getTargetFilePath(), autoCaption.getId(), autoCaption.getLanguage(), autoCaption.getAdditionalProperties());
+					
+					// save the speech2text id
+					autoCaption.setSpeech2TextId(speech2TextId);
+					GenericDao.getInstance().update(autoCaption);
+			
+					persistAutoCaptionStatus(autoCaption, AutoCaptionStatus.S2T_RUNNING, true);
+				} catch(BadRequestException e) {
+					persistAutoCaptionStatus(autoCaption, AutoCaptionStatus.ERROR_STARTING_S2T);
+					e.printStackTrace();
+					return null;
+				} catch(WebApplicationException e) {
+					persistAutoCaptionStatus(autoCaption, AutoCaptionStatus.ERROR_STARTING_S2T);
+					e.printStackTrace();
+					return null;
+				}
+			}
+		} else {
+			logger.info("Speech2Text engine does currently not accept jobs, add the autocaption with id: {} / sourceId: {} to queue.", autoCaption.getId(), autoCaption.getSourceId());
+			// if not set status to QUEUED
+			persistAutoCaptionStatus(autoCaption, AutoCaptionStatus.S2T_QUEUED, true);
+		}
+		
+		return autoCaption;
+	}
+	
+	/**
+	 * This runs the auto caption for queued jobs
+	 * A new request is sent to the speech2text engine to do the heavy lifting
+	 */
+	public AutoCaption runQueuedAutoCaptioning() {
+		logger.info("A queued autoCaptioning is started for the sourceId {} and tenant {}", autoCaption.getSourceId(), autoCaption.getTenant());
+		logger.info("Additional properties are set {}", autoCaption.getAdditionalProperties().toString());
 		
 		// create a new auto captioning via the speech2text API
 		try {
