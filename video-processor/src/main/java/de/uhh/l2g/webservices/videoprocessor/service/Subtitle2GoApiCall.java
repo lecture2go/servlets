@@ -4,11 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.BadRequestException;
@@ -17,20 +13,11 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
-import org.glassfish.jersey.client.ClientProperties;
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
-import org.glassfish.jersey.media.multipart.FormDataBodyPart;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
-import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 
-import de.uhh.l2g.webservices.videoprocessor.model.opencast.Medium;
+
 import de.uhh.l2g.webservices.videoprocessor.util.Config;
 
 public class Subtitle2GoApiCall {
@@ -122,6 +109,16 @@ public class Subtitle2GoApiCall {
 		configuration.put("id",id.toString());
 		configuration.put("filename",filename.toString());
 		configuration.put("language",language);
+		
+		String engine = config.getProperty("subtitle2go.engine." + language);
+		if (engine != null) {
+			configuration.put("engine", engine);
+		}
+		
+		String parallelProcesses = config.getProperty("subtitle2go.parallelProcesses." + language);
+		if (parallelProcesses != null) {
+			configuration.put("num_procs", parallelProcesses);
+		}
 
 		// send url of this subtitle2go instance for callback
 		configuration.put("url", config.getProperty("url.autocaption"));
