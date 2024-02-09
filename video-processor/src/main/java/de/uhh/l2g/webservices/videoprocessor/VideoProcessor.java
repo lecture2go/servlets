@@ -22,7 +22,7 @@ import de.uhh.l2g.webservices.videoprocessor.scheduledtasks.AutoCaptionQueueSche
 @ApplicationPath("/")
 public class VideoProcessor extends ResourceConfig {
 	
-	private int SCHEDULER_INTERVAL_SECONDS = 60;
+	private int SCHEDULER_INTERVAL_SECONDS = 300; // every 5 minutes
 	
 	public VideoProcessor() {
 		// Register resources and providers using package-scanning.
