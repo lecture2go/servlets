@@ -128,14 +128,34 @@ public class GenericDao {
 	 * @param orderField the field which is used to order the results
 	 * @return a list with all filtered entities
 	 */
-	public <T> List<T> getByFieldValueOrderedDesc(Class<T> type, String field, Long value, String orderField) {
+	public <T> List<T> getByFieldValueOrderedDesc(Class<T> type, String field, Object value, String orderField) {
+		return getByFieldValueOrdered(type, field, value, orderField, "DESC");
+	}
+	
+	/**
+	 * Gets entities for an entity class if field-value matches ordered by orderField (ASC)
+	 * @param type the class of the entity
+	 * @param field the field to look for the value
+	 * @param value the value which is looked in the field
+	 * @param orderField the field which is used to order the results
+	 * @return a list with all filtered entities
+	 */
+	public <T> List<T> getByFieldValueOrderedAsc(Class<T> type, String field, Object value, String orderField) {
+		return getByFieldValueOrdered(type, field, value, orderField, "ASC");
+	}
+	
+	public <T> List<T> getByFieldValueOrdered(Class<T> type, String field, Object value, String orderField, String orderType) {
 		EntityManager em = getEntityManager();
 		CriteriaBuilder builder = em.getCriteriaBuilder();
 		CriteriaQuery<T> criteriaQuery = builder.createQuery(type);
 		Root<T> rootEntry = criteriaQuery.from(type);
         CriteriaQuery<T> all = criteriaQuery.select(rootEntry);
         all.where(builder.equal(rootEntry.get(field), value));
-        all.orderBy(builder.desc(rootEntry.get(orderField)));
+        if (orderType.equals("ASC")) {
+            all.orderBy(builder.asc(rootEntry.get(orderField)));
+        } else if (orderType.equals("DESC")) {
+        	all.orderBy(builder.desc(rootEntry.get(orderField)));
+        }
 		TypedQuery<T> allQuery = em.createQuery(all);
 		List<T> entities = allQuery.getResultList();
 		em.close();

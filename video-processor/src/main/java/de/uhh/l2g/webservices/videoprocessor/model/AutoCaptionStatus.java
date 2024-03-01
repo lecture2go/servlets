@@ -6,10 +6,14 @@ package de.uhh.l2g.webservices.videoprocessor.model;
  */
 public enum AutoCaptionStatus {
 	S2T_RUNNING,
-	S2T_SUCCEEDED, 
-	COPYING_FILE, 
-	FINISHED, 
+	S2T_SUCCEEDED,
+	S2T_STOPPING,
+	S2T_QUEUED,
+	COPYING_FILE,
+	FINISHED,
 	ERROR_STARTING_S2T, 
 	ERROR_COPYING_FILE,
 	ERROR_S2T_FAILED, 
+	ERROR_S2T_STOPPING,
+	DELETED
 }

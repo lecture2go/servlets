@@ -53,7 +53,6 @@ public class AutoCaption {
 
 	private String targetDirectory;
 	
-	@Transient
 	private String targetFilePath;
 	
 	@Transient

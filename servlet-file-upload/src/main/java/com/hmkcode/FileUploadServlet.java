@@ -45,12 +45,14 @@ public class FileUploadServlet extends HttpServlet {
 		String transmittedToken = request.getHeader("X-token");
 		String expirationTime = request.getHeader("X-expiration");
 		String videoId = request.getHeader("X-videoId");
+		String targetDir = request.getHeader("X-targetDir");
+		String targetFilename = request.getHeader("X-targetFilename");
 		
-		logger.info("A upload request was received for videoId {} with the transmittedToken {} and expirationTime {}", videoId, transmittedToken, expirationTime);
+		logger.info("An upload request was received for videoId {} with the transmittedToken {} and expirationTime {}", videoId, transmittedToken, expirationTime);
 		
 		String correctToken = null;
 		try {
-			correctToken = Security.getSignatureKey(Security.getSignatureKey(expirationTime, videoId));
+			correctToken = Security.getSignatureKey(Security.getSignatureKey(expirationTime, targetDir + "/" + targetFilename));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -89,28 +91,33 @@ public class FileUploadServlet extends HttpServlet {
     	ObjectMapper mapper = new ObjectMapper();
     	JSONArray jsonA = new JSONArray();
     	List<FileMeta>  lf = MultipartRequestHandler.uploadByApacheFileUpload(request);
-    	ListIterator<FileMeta> iLf = lf.listIterator();
-    	while(iLf.hasNext()){
-    		JSONObject jsonO = new JSONObject();
-			FileMeta fm = iLf.next();
-    		try {
-    			String name = "";
-    			if(fm.getOpenAccess().trim().equals("1"))name=fm.getFileName();
-    			else name = fm.getSecureFileName();
-    			
-    			jsonO.put("name", name);
-				jsonO.put("fileName", fm.getFileName());
-				jsonO.put("secureFileName", fm.getSecureFileName());
-				jsonO.put("id", name.replace(".", ""));
-				jsonO.put("size", fm.getFileSize());
-				jsonO.put("type", fm.getFileType());
-				jsonO.put("openAccess", fm.getOpenAccess());
-				jsonO.put("generationDate", fm.getGenerationDate());
-				jsonA.put(jsonO);
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-    		
+    	if (lf==null) {
+			response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+	    	response.getWriter().print("");
+    	} else {
+    		ListIterator<FileMeta> iLf = lf.listIterator();
+        	while(iLf.hasNext()){
+        		JSONObject jsonO = new JSONObject();
+    			FileMeta fm = iLf.next();
+        		try {
+        			String name = "";
+        			if(fm.getOpenAccess().trim().equals("1"))name=fm.getFileName();
+        			else name = fm.getSecureFileName();
+        			
+        			jsonO.put("name", name);
+    				jsonO.put("fileName", fm.getFileName());
+    				jsonO.put("secureFileName", fm.getSecureFileName());
+    				jsonO.put("id", name.replace(".", ""));
+    				jsonO.put("size", fm.getFileSize());
+    				jsonO.put("type", fm.getFileType());
+    				jsonO.put("openAccess", fm.getOpenAccess());
+    				jsonO.put("generationDate", fm.getGenerationDate());
+    				jsonA.put(jsonO);
+    			} catch (JSONException e) {
+    				e.printStackTrace();
+    			}
+        		
+        	}
     	}
 		// 4. Send resutl to client
     	// Get the printwriter object from response to write the required json object to the output stream      

@@ -3,6 +3,7 @@ package de.uhh.l2g.webservices.videoprocessor.util;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 
 import org.apache.commons.io.FileUtils;
 
@@ -59,5 +60,21 @@ public class FileHandler {
 	 */
 	public static void copy(String sourcePath, String targetPath) throws IOException {
 		FileUtils.copyFile(FileUtils.getFile(sourcePath), FileUtils.getFile(targetPath));
+	}
+	
+	/**
+	 * Creates a symlink from source file path to target file path
+	 * @param sourceFilePath the source file path
+	 * @param targetFilePath the target path
+	 * @throws IOException
+	 */
+	public static void createSymlink(String sourceFilePath, String targetFilePath) throws IOException {
+
+		File sourceFile = new File(sourceFilePath);
+		File targetFile = new File(targetFilePath);
+
+		if (targetFile.exists()) {
+			Files.createSymbolicLink(sourceFile.toPath(), targetFile.toPath());
+		}
 	}
 }

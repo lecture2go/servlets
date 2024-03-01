@@ -36,6 +36,8 @@ public class MultipartRequestHandler {
 	private static final Logger logger = LogManager.getLogger(MultipartRequestHandler.class);
 
 	private static final Long MAX_SIZE = new Long("107374182400"); //100 GB
+	
+	private static final String[] whitelistedFileExtensions = {"mp4", "mp3", "m4a", "m4v", "png", "jpg", "jpeg", "pdf", "vtt", "srt"};
 
 	public static List<FileMeta> uploadByJavaServletAPI(HttpServletRequest request) throws IOException, ServletException{
 
@@ -124,32 +126,67 @@ public class MultipartRequestHandler {
 				String l2gDateTime = "";
 				String videoId = "";
 				boolean isSignVideo = false;
+				String perspectiveId = "";
 
 				// 2.4 Go over each FileItem
 				for(FileItem item:items){
-
 					// 2.5 if FileItem is not of type "file"
 				    if (item.isFormField()) {
 				    	// 2.6 Search for parameter
 				        if(item.getFieldName().equals("repository")){
 				        	repository = item.getString();
+				        	
 				        	// only allow repositories which are beneath the given file folder
 				        	if (!repository.startsWith(Security.getRepositoryRoot())) {
+				        		logger.error("Directory " + repository + " is forbidden because it is no subdirectory of + " + Security.getRepositoryRoot());
+				        		return null;
+				        	}
+				        	if (!repository.equals(request.getHeader("X-targetDir"))) {
+				        		logger.error("Invalid target directory.");
 				        		return null;
 				        	}
 				        }
 				        if(item.getFieldName().equals("l2gDateTime"))l2gDateTime = item.getString();
 				        if(item.getFieldName().equals("openaccess"))openaccess = item.getString();
 				        if(item.getFieldName().equals("lectureseriesNumber") && item.getString().trim().length()>0)lectureseriesNumber = item.getString();
-				        if(item.getFieldName().equals("fileName") && item.getString().trim().length()>0)fileName = item.getString();
-				        if(item.getFieldName().equals("secureFileName") && item.getString().trim().length()>0)secureFileName = item.getString();
+				        if(item.getFieldName().equals("fileName") && item.getString().trim().length()>0) {
+				        	fileName = item.getString();
+							// check if payload differs from header data which is used for the hash - this prohibits upload to other destinations
+				        	if (openaccess.equals("1") && !request.getHeader("X-targetFilename").equals(fileName)) {
+				        		logger.error("Invalid target filename.");
+								return null;
+							}
+			        	}
+				        if(item.getFieldName().equals("secureFileName") && item.getString().trim().length()>0) {
+				        	secureFileName = item.getString();
+							// check if payload differs from header data which is used for the hash - this prohibits upload to other destinations
+				        	if (openaccess.equals("0") && !request.getHeader("X-targetFilename").equals(secureFileName)) {
+				        		logger.error("Invalid target filename.");
+								return null;
+							}
+				        }
 				        if(item.getFieldName().equals("videoId") && item.getString().trim().length()>0)videoId = item.getString();
-								if (item.getFieldName().equals("isSignVideo") && "true".equals(item.getString().trim())) {
-									isSignVideo = true;
-								}
+						if (item.getFieldName().equals("isSignVideo") && "true".equals(item.getString().trim())) {
+							isSignVideo = true;
+						}
+						if (item.getFieldName().equals("perspectiveId") && item.getString().trim().length()>0) {
+							perspectiveId = item.getString();
+					    }
 				    } else {
 				        String itemName=item.getName();
 				        String container = itemName.split("\\.")[itemName.split("\\.").length-1].toLowerCase();//only container to lower case!
+				        boolean extensionAllowed = false;
+				        for (String whitelistedFileExtension: whitelistedFileExtensions) {
+				        	if (container.toLowerCase().equals(whitelistedFileExtension)) {
+				        		extensionAllowed = true;
+				        	}
+				        }
+				        
+				        if (!extensionAllowed) {
+			        		logger.error("Invalid file extension.");
+			        		return null;
+				        }
+				        
 				        // 2.7 Create FileMeta object
 				    	temp = new FileMeta();
 				    	temp.setOpenAccess(openaccess);
@@ -162,32 +199,36 @@ public class MultipartRequestHandler {
 						try {
 							//there is already an uploaded media file
 							String prefix = "";
-							String signVideoIdentifier = "";
-							if (isSignVideo && !fileName.endsWith("_sign.mp4") && !fileName.endsWith("_sign.xx")) {
-								signVideoIdentifier = "_sign";
+							String suffix = "";
+							if (isSignVideo) {
+								suffix = "_sign";
 							}
+							if (!perspectiveId.isEmpty()) {
+								suffix = "_p" + perspectiveId;
+							}
+							
 							if (fileName.length() > 0) {
 								prefix = fileName.split("." + fileName.split("\\.")[fileName.split("\\.").length - 1])[0];
-								itemName = prefix + signVideoIdentifier + "." + container;
+								itemName = prefix + suffix + "." + container;
 								temp.setFileName(itemName);
 								//for secure file name
 								if (secureFileName.length() > 0) {
 									prefix = secureFileName.split("." + secureFileName.split("\\.")[secureFileName.split("\\.").length - 1])[0];
-									temp.setSecureFileName(prefix + signVideoIdentifier + "." + container);
+									temp.setSecureFileName(prefix + suffix + "." + container);
 								} else {
-									String sFN = Security.createSecureFileName() + signVideoIdentifier + "." + container;
+									String sFN = Security.createSecureFileName() + suffix + "." + container;
 									temp.setSecureFileName(sFN);
 								}
 							} else if (secureFileName.endsWith(".xx")) {
 								//or this is the first upload
-								itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime, videoId, isSignVideo);
-								temp.setSecureFileName(secureFileName.replace(".xx", signVideoIdentifier + "." + container));
+								itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime, videoId, suffix);
+								temp.setSecureFileName(secureFileName.replace(".xx", suffix + "." + container));
 								temp.setFileName(itemName);
 							}
 							//////////// ---- //////////// ---- ////////////
 							//new file -> item is lecture2go named file?
-							if (!SyntaxManager.isL2gFileName(itemName, isSignVideo)) {
-								itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime, videoId, isSignVideo);
+							if (!SyntaxManager.isL2gFileName(itemName, suffix)) {
+								itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime, videoId, suffix);
 								temp.setFileName(itemName);
 							}
 							//video isn't open access
@@ -248,17 +289,13 @@ public class MultipartRequestHandler {
 		return files;
 	}
 
-	private static String generateL2gFileName(String lectureseriesNumber, String container, String l2gDateTime, String videoId, boolean isSignVideo) {
+	private static String generateL2gFileName(String lectureseriesNumber, String container, String l2gDateTime, String videoId, String mediaSuffix) {
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd_HH-mm");
 		String newDate = format.format(new Date()).toString();
 		if(l2gDateTime.length()>0)newDate=l2gDateTime;
-		String signVideoIdentifier = "";
-		if (isSignVideo) {
-			signVideoIdentifier = "_sign";
-		}
 
 		return SyntaxManager.replaceIllegalFilenameCharacters(lectureseriesNumber) + "_video-" + videoId + "_" + newDate +
-				signVideoIdentifier + "." + container;
+				mediaSuffix + "." + container;
 	}
 	// this method is used to get file name out of request headers
 	//
