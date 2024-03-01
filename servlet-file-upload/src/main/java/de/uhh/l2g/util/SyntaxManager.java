@@ -10,10 +10,10 @@ import java.util.regex.Pattern;
 
 public class SyntaxManager {
 
-	public static boolean isL2gFileName(String fileName, boolean isSignVideo){
+	public static boolean isL2gFileName(String fileName, String mediaSuffix){
 		boolean isL2gFile=false;
-		if (isSignVideo) {
-			fileName = fileName.replace("_sign", "");
+		if (!mediaSuffix.isEmpty()) {
+			fileName = fileName.replace("mediaSuffix", "");
 		}
 		fileName = replaceIllegalFilenameCharacters(fileName);
 		//pick file container

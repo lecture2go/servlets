@@ -126,6 +126,7 @@ public class MultipartRequestHandler {
 				String l2gDateTime = "";
 				String videoId = "";
 				boolean isSignVideo = false;
+				String perspectiveId = "";
 
 				// 2.4 Go over each FileItem
 				for(FileItem item:items){
@@ -168,6 +169,9 @@ public class MultipartRequestHandler {
 						if (item.getFieldName().equals("isSignVideo") && "true".equals(item.getString().trim())) {
 							isSignVideo = true;
 						}
+						if (item.getFieldName().equals("perspectiveId") && item.getString().trim().length()>0) {
+							perspectiveId = item.getString();
+					    }
 				    } else {
 				        String itemName=item.getName();
 				        String container = itemName.split("\\.")[itemName.split("\\.").length-1].toLowerCase();//only container to lower case!
@@ -195,32 +199,36 @@ public class MultipartRequestHandler {
 						try {
 							//there is already an uploaded media file
 							String prefix = "";
-							String signVideoIdentifier = "";
-							if (isSignVideo && !fileName.endsWith("_sign.mp4") && !fileName.endsWith("_sign.xx")) {
-								signVideoIdentifier = "_sign";
+							String suffix = "";
+							if (isSignVideo) {
+								suffix = "_sign";
 							}
+							if (!perspectiveId.isEmpty()) {
+								suffix = "_p" + perspectiveId;
+							}
+							
 							if (fileName.length() > 0) {
 								prefix = fileName.split("." + fileName.split("\\.")[fileName.split("\\.").length - 1])[0];
-								itemName = prefix + signVideoIdentifier + "." + container;
+								itemName = prefix + suffix + "." + container;
 								temp.setFileName(itemName);
 								//for secure file name
 								if (secureFileName.length() > 0) {
 									prefix = secureFileName.split("." + secureFileName.split("\\.")[secureFileName.split("\\.").length - 1])[0];
-									temp.setSecureFileName(prefix + signVideoIdentifier + "." + container);
+									temp.setSecureFileName(prefix + suffix + "." + container);
 								} else {
-									String sFN = Security.createSecureFileName() + signVideoIdentifier + "." + container;
+									String sFN = Security.createSecureFileName() + suffix + "." + container;
 									temp.setSecureFileName(sFN);
 								}
 							} else if (secureFileName.endsWith(".xx")) {
 								//or this is the first upload
-								itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime, videoId, isSignVideo);
-								temp.setSecureFileName(secureFileName.replace(".xx", signVideoIdentifier + "." + container));
+								itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime, videoId, suffix);
+								temp.setSecureFileName(secureFileName.replace(".xx", suffix + "." + container));
 								temp.setFileName(itemName);
 							}
 							//////////// ---- //////////// ---- ////////////
 							//new file -> item is lecture2go named file?
-							if (!SyntaxManager.isL2gFileName(itemName, isSignVideo)) {
-								itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime, videoId, isSignVideo);
+							if (!SyntaxManager.isL2gFileName(itemName, suffix)) {
+								itemName = generateL2gFileName(lectureseriesNumber, container, l2gDateTime, videoId, suffix);
 								temp.setFileName(itemName);
 							}
 							//video isn't open access
@@ -281,17 +289,13 @@ public class MultipartRequestHandler {
 		return files;
 	}
 
-	private static String generateL2gFileName(String lectureseriesNumber, String container, String l2gDateTime, String videoId, boolean isSignVideo) {
+	private static String generateL2gFileName(String lectureseriesNumber, String container, String l2gDateTime, String videoId, String mediaSuffix) {
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd_HH-mm");
 		String newDate = format.format(new Date()).toString();
 		if(l2gDateTime.length()>0)newDate=l2gDateTime;
-		String signVideoIdentifier = "";
-		if (isSignVideo) {
-			signVideoIdentifier = "_sign";
-		}
 
 		return SyntaxManager.replaceIllegalFilenameCharacters(lectureseriesNumber) + "_video-" + videoId + "_" + newDate +
-				signVideoIdentifier + "." + container;
+				mediaSuffix + "." + container;
 	}
 	// this method is used to get file name out of request headers
 	//
