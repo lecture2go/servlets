@@ -34,7 +34,6 @@ package de.uhh.l2g.util;
  ***************************************************************************/
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -42,7 +41,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.binary.Hex;
 
 import de.uhh.l2g.util.Config;
-import sun.misc.BASE64Encoder;
+import java.util.Base64;
 
 /**
  * The Class Security.
@@ -141,7 +140,7 @@ public class Security {
 			long msec = System.currentTimeMillis();
 			String time = msec + "";
 			ReadWriteDES.encode(time.getBytes(), out, "11091980");
-			String s = new BASE64Encoder().encode(out.toByteArray());
+			String s = Base64.getEncoder().encodeToString(out.toByteArray());
 			// replace bad characters!
 			s = s.replace('/', 'a');
 			s = s.replace('\\', 'b');
@@ -172,7 +171,7 @@ public class Security {
 	 */
 	public static String encodeString(String p_sString) {
 		if (p_sString == null) return "";
-		return (new sun.misc.BASE64Encoder()).encode(p_sString.getBytes());
+		return Base64.getEncoder().encodeToString(p_sString.getBytes());
 	}
 
 	/**
@@ -183,11 +182,7 @@ public class Security {
 	 */
 	public static String decodeString(String p_sString) {
 		if (p_sString == null || p_sString.equals("")) return null;
-		try {
-			return new String((new sun.misc.BASE64Decoder()).decodeBuffer(p_sString));
-		} catch (IOException e) {
-			return null;
-		}
+		return new String(Base64.getDecoder().decode(p_sString));
 	}
 	
 	/**
