@@ -19,7 +19,11 @@
 		<servlet-class>DownloadManager</servlet-class>
 		<init-param>
 			<param-name>repositoryRoot</param-name>
-			<param-value>/Users/isturm/Desktop/l2gomedia</param-value>
+			<param-value>/repository/root</param-value>
+		</init-param>
+		<init-param>
+			<param-name>repositorySubRoot</param-name>
+			<param-value>repository/sub/root</param-value>
 		</init-param>
 		<init-param>
 			<param-name>downloadServerName</param-name>
