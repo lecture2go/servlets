@@ -158,6 +158,10 @@ public class AutoCaptionService {
 			// the auto caption failed 
 			// this status change count towards the elapsed time
 			persistAutoCaptionStatus(autoCaption, AutoCaptionStatus.ERROR_S2T_FAILED, true);
+
+			// delete the working copy
+			logger.info("Delete the temporary working file {} from id: {} / sourceId: {}.", autoCaption.getTargetFilePath(), autoCaption.getId(), autoCaption.getSourceId());
+			FileHandler.deleteIfExists(autoCaption.getTargetFilePath());
 		}
 	}
 	
